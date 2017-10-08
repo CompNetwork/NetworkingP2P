@@ -1,4 +1,4 @@
-package Peers;
+package main.hosts;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -9,7 +9,7 @@ import java.util.List;
 
 public class Peer {
 
-    private static final String PEERINFO = "./src/PeerInfo.cfg";
+    private static final String PEERINFO = "./src/main/hosts/PeerInfo.cfg";
     private static final int PEERID = 0;
     private static final int PEERHOSTNAME = 1;
     private static final int PEERPORT = 2;
@@ -18,40 +18,44 @@ public class Peer {
     private String peerID;
     private String hostName;
     private int port;
-    private ArrayList <Socket> connections;
+    private ArrayList <ClientThread> connections;
     private ServerSocket sSocket;
-    private Socket cSocket;
 
     public Peer(String peerID, String hostname, int port) {
         this.peerID = peerID;
         this.hostName = hostname;
         this.port = port;
+        this.connections = new ArrayList<ClientThread>();
         //this.run();
     }
 
     // Starts P2P process
-    private void run(){
+    public void start(){
         this.connect2Peers();
         this.startServer();
     }
 
     // Connects to all appropriate peers
-    public void connect2Peers(){
+    public void connect2Peers() {
 
         try {
             List<String> peers = this.getPeerConnList();
+            if (peers.size() == 0) System.out.println("I " + this.peerID + " am the first. No one to connect to.");
+            else System.out.println("Connecting with peers " + peers);
+
             for (String peer : peers) {
 
+                System.out.println("Handling Peer: " + peer);
                 String [] peerCol = peer.split(" ");
+
                 System.out.println("I am " + this.peerID + " attempting to connect with " + peerCol[PEERID]);
-                Socket c = new Socket(peerCol[PEERHOSTNAME], Integer.valueOf(peerCol[PEERPORT]));
-                PrintWriter out =  new PrintWriter(c.getOutputStream(), true);
-                BufferedReader stdIn = new BufferedReader((new InputStreamReader(System.in)));
+                Socket s = new Socket(peerCol[PEERHOSTNAME], Integer.valueOf(peerCol[PEERPORT]));
 
-                String outputLine = stdIn.readLine();
-                System.out.println(outputLine + " received");
+                ClientThread ct = new ClientThread(s, this);
+                ct.start();
+                this.connections.add(ct);
 
-                out.println(outputLine);
+                System.out.println("Peer " + this.peerID + " has successfully connected with Peer " + peerCol[PEERID] + " via socket " + s.toString());
             }
 
         } catch (UnknownHostException e) {
@@ -64,31 +68,22 @@ public class Peer {
     // Opens server connects
     public void startServer(){
         try {
-
-//            while(true) {
-//            }
-            // Start ServerSocket
             this.sSocket = new ServerSocket(this.port);
-            // Log Server connected to PORT
-            System.out.println("Server started and connected to " + this.port);
+            while(true) {
 
-            Socket s = this.sSocket.accept();
-
-            PrintWriter out = new PrintWriter(s.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
-            BufferedReader stdIn = new BufferedReader((new InputStreamReader(System.in)));
-
-            String inputLine = in.readLine();
-            //out.println(inputLine);
-
-            System.out.println("I am server " + this.peerID + " retreived " + inputLine + " from a sender.");
-
-            System.out.println("Ending Program...");
-
+                // Select between accepting new sockets
+                System.out.println("Awaiting connections to other peers...");
+                Socket s = this.sSocket.accept();
+                System.out.println("Peer " + this.peerID + " added new connection: " + s.toString() + " to connection list");
+                ClientThread ct = new ClientThread(s, this);
+                ct.start();
+                this.connections.add(ct);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
             try {
+                for (ClientThread connection : connections) { connection.close(); }
                 this.sSocket.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -132,4 +127,19 @@ public class Peer {
         return result;
     }
 
+    public ArrayList<ClientThread> getConnections() {
+        return connections;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public String getPeerID() {
+        return peerID;
+    }
 }

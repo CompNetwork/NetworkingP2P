@@ -72,7 +72,7 @@ public class ChunkifiedFile {
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile(file,"r");
             randomAccessFile.seek(chunkSize*i);
-            byte[] read_in = new byte[chunkSize-1];
+            byte[] read_in = new byte[chunkSize];
             int actually_read_in = randomAccessFile.read(read_in);
             byte[] read_in_truncated = new byte[actually_read_in];
             System.arraycopy(read_in,0,read_in_truncated,0,actually_read_in);

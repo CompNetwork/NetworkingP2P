@@ -1,11 +1,10 @@
 package main;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.RandomAccess;
 
 // Handles reading/writing a file to disk, and mantaining which portions of it are known.
 // We don't want to keep the whole file in memory, we want to split it up for the purposes of this.
@@ -14,11 +13,13 @@ public class ChunkifiedFile {
     private File file;
     private boolean[] bitset;
     private int chunkSize;
+    int fileSize;
 
-    public ChunkifiedFile(File f, boolean[] bitSet, int chunkSize) {
+    private ChunkifiedFile(File f, boolean[] bitSet, int fileSize, int chunkSize) {
         this.file = f;
         this.bitset = bitSet;
         this.chunkSize = chunkSize;
+        this.fileSize = fileSize;
     }
 
     private static int getChunkCount(int chunkSize, int fileSize) {
@@ -35,7 +36,7 @@ public class ChunkifiedFile {
             }
             boolean[] bitset = new boolean[getChunkCount(chunkSize,fileSize)];
             Arrays.fill(bitset,true);
-            return new ChunkifiedFile(file,bitset,chunkSize);
+            return new ChunkifiedFile(file,bitset,fileSize, chunkSize);
     }
 
     // Create a file on the disk, initialized to all 0s.
@@ -47,30 +48,58 @@ public class ChunkifiedFile {
             byte bytes[] = new byte[chunkSize];
             Arrays.fill(bytes,MAGIC_CONSTANT);
             for ( int i = 0; i < fileSize; i+=chunkSize) {
-                fileOutputStream.write(bytes,i,Math.min(chunkSize,i-fileSize));
+                int length_to_write = Math.min(chunkSize,fileSize-i);
+                fileOutputStream.write(bytes,0, length_to_write);
             }
-            return new ChunkifiedFile(file,new boolean[(getChunkCount(chunkSize,fileSize))],chunkSize);
+            return new ChunkifiedFile(file,new boolean[(getChunkCount(chunkSize,fileSize))],fileSize, chunkSize);
         } catch(IOException except) {
             System.err.println("Error: " + except);
             return null;
         }
     }
     public boolean hasChunk(int i) {
-        return false;
+        return bitset[i];
     }
     // Return the chunk if exists, else return a chunk fully populated with 42
-    public FileChunk getChunk() {
-        return null;
+    public FileChunk getChunk(int i) {
+        if ( ! hasChunk(i)) {
+            System.out.println("Warning, attempting to access a chunk that doesn't exist!!");
+
+            return new DefaultValueChunk(Math.min(i*chunkSize-fileSize, chunkSize),MAGIC_CONSTANT);
+        }
+        try {
+            RandomAccessFile randomAccessFile = new RandomAccessFile(file,"r");
+            randomAccessFile.seek(chunkSize*i);
+            byte[] read_in = new byte[chunkSize-1];
+            int actually_read_in = randomAccessFile.read(read_in);
+            byte[] read_in_truncated = new byte[actually_read_in];
+            System.arraycopy(read_in,0,read_in_truncated,0,actually_read_in);
+            return new FileChunkImpl(read_in_truncated);
+        } catch(IOException except) {
+            System.err.println("Returning null as a error happened, was the file deleted while the program was running?");
+            return null;
+        }
     }
     // Sets the chunk, and writes it to disk immediately.
     public void setChunk(int i, FileChunk data) {
+        if ( i * chunkSize > fileSize || i < 0 || (i*chunkSize + data.size()) > fileSize ) { throw new IndexOutOfBoundsException("Error, trying to write past the limit of this file!"); }
 
+        try {
+            RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
+            randomAccessFile.seek(chunkSize*i);
+            randomAccessFile.write(data.asByteArray());
+            bitset[i] = true; // Set this chunk to have been written!
+
+        } catch ( IOException except ) {
+            System.err.println("Returning null as a error happened, was the file deleted while the program was running?");
+        }
     }
+
     public int getChunkCount() {
-        return 0;
+        return bitset.length;
     }
     // Chunks that are 1 are currently on the disk, chunks that are 0 are not available.
-    public BitSet AvailableChunks() {
-        return null;
+    public boolean[] AvailableChunks() {
+        return bitset;
     }
 }

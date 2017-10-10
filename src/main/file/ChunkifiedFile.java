@@ -44,7 +44,7 @@ public class ChunkifiedFile {
     public static ChunkifiedFile CreateFile(String filePath, int chunkSize, int fileSize) {
         try {
             File file = new File(filePath);
-            System.out.println("Making a file at! " + file.getAbsoluteFile());
+            //System.out.println("Making a file at! " + file.getAbsoluteFile());
             file.createNewFile();
             FileOutputStream fileOutputStream = new FileOutputStream(file);
             byte bytes[] = new byte[chunkSize];
@@ -65,7 +65,7 @@ public class ChunkifiedFile {
     // Return the chunk if exists, else return a chunk fully populated with 42
     public FileChunk getChunk(int i) {
         if ( ! hasChunk(i)) {
-            System.out.println("Warning, attempting to access a chunk that doesn't exist!!");
+            //System.out.println("Warning, attempting to access a chunk that doesn't exist!!");
 
             return new DefaultValueChunk(Math.min(fileSize-i*chunkSize, chunkSize),MAGIC_CONSTANT);
         }
@@ -84,7 +84,22 @@ public class ChunkifiedFile {
     }
     // Sets the chunk, and writes it to disk immediately.
     public void setChunk(int i, FileChunk data) {
-        if ( i * chunkSize > fileSize || i < 0 || (i*chunkSize + data.size()) > fileSize ) { throw new IndexOutOfBoundsException("Error, trying to write past the limit of this file!"); }
+        if (  i * chunkSize > fileSize || i < 0 || (i*chunkSize + data.size()) > fileSize ) {
+            // Check that is within bounds
+            throw new IndexOutOfBoundsException("Error, trying to write past the limit of this file!");
+        }
+        // Check the data size if we are setting the last chunk
+        if ( i == this.getChunkCount()-1 ) {
+            if ( data.size() != fileSize - i*chunkSize ) {
+                throw new IllegalArgumentException("Chunk is too large, trying to set the last chunk!");
+            }
+        } else {
+            // Check the data size otherwise
+            if ( data.size() != chunkSize ) {
+                throw new IllegalArgumentException("Chunk is too large");
+            }
+        }
+
 
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");

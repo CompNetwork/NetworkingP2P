@@ -2,10 +2,11 @@ package main.file;
 
 import java.util.Arrays;
 
+// Does not check for a negative chunk size, but that is not valid.
 public class DefaultValueChunk implements  FileChunk {
     int chunkSize;
-    int returnValue;
-    public DefaultValueChunk(int size, int value) {
+    byte returnValue;
+    public DefaultValueChunk(int size, byte value) {
         this.returnValue = value;
         this.chunkSize = size;
     }
@@ -15,7 +16,7 @@ public class DefaultValueChunk implements  FileChunk {
     }
 
     @Override
-    public int get(int i) {
+    public byte get(int i) {
         return returnValue;
     }
 

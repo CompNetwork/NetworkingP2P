@@ -12,7 +12,7 @@ public class FileChunkImpl implements FileChunk {
     }
 
     @Override
-    public int get(int i) {
+    public byte get(int i) {
         return backing_store[i];
     }
 

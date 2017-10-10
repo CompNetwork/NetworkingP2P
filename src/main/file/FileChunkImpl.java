@@ -1,4 +1,4 @@
-package main;
+package main.file;
 
 public class FileChunkImpl implements FileChunk {
     byte[] backing_store;

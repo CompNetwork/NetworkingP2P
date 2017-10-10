@@ -1,4 +1,4 @@
-package main;
+package main.file;
 
 public interface FileChunk {
     int size();

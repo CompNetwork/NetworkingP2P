@@ -1,4 +1,4 @@
-package main;
+package main.file;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -44,6 +44,8 @@ public class ChunkifiedFile {
     public static ChunkifiedFile CreateFile(String filePath, int chunkSize, int fileSize) {
         try {
             File file = new File(filePath);
+            System.out.println("Making a file at! " + file.getAbsoluteFile());
+            file.createNewFile();
             FileOutputStream fileOutputStream = new FileOutputStream(file);
             byte bytes[] = new byte[chunkSize];
             Arrays.fill(bytes,MAGIC_CONSTANT);
@@ -65,7 +67,7 @@ public class ChunkifiedFile {
         if ( ! hasChunk(i)) {
             System.out.println("Warning, attempting to access a chunk that doesn't exist!!");
 
-            return new DefaultValueChunk(Math.min(i*chunkSize-fileSize, chunkSize),MAGIC_CONSTANT);
+            return new DefaultValueChunk(Math.min(fileSize-i*chunkSize, chunkSize),MAGIC_CONSTANT);
         }
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile(file,"r");

@@ -1,5 +1,8 @@
 package main.hosts;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.io.*;
@@ -23,6 +26,8 @@ hour, minute, and second. The format of [Time] is up to you.
 
         String log = timeStamp + ": Peer " + peerID + " makes a connection to Peer " + otherPeerID + ".";
 
+        logString(log,peerID);
+
     }
 
     /*
@@ -37,6 +42,7 @@ made TCP connection to [peer_ID 1].
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
         String log = timeStamp + ": Peer " + peerID + " is connected from Peer " + otherPeerID + ".";
+        logString(log,peerID);
     }
 
     /*
@@ -55,6 +61,7 @@ made TCP connection to [peer_ID 1].
         }
 
         log = log + ".";
+        logString(log,peerID);
     }
 
     /*
@@ -70,6 +77,7 @@ neighbor.
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
         String log = timeStamp + ": Peer " + peerID + " has the optimistically unchocked neighbor " + otherID + ".";
+        logString(log,peerID);
     }
 
     /*
@@ -84,6 +92,7 @@ who unchokes [peer_ID 1].
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
         String log = timeStamp + ": Peer " + peerID + " is unchoked by " + otherID + ".";
+        logString(log,peerID);
     }
 
     /*
@@ -97,6 +106,7 @@ who chokes [peer_ID 1].
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
         String log = timeStamp + ": Peer " + peerID + " is choked by " + otherID + ".";
+        logString(log,peerID);
     }
 
     /*
@@ -112,6 +122,7 @@ in the message.
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
         String log = timeStamp + ": Peer " + peerID + " received the 'have' message from " + otherID + "for the piece " + pieceIndex + ".";
+        logString(log,peerID);
     }
 
     /*
@@ -124,6 +135,7 @@ represents the peer who sent the message.
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
         String log = timeStamp + ": Peer " + peerID + " received the 'interested' message from " + otherID + ".";
+        logString(log,peerID);
     }
 
     /*
@@ -136,6 +148,7 @@ represents the peer who sent the message.
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
         String log = timeStamp + ": Peer " + peerID + " received the 'not interested' message from " + otherID + ".";
+        logString(log,peerID);
     }
 
     /*
@@ -151,6 +164,7 @@ the peer who sent the piece. [piece index] is the piece index the peer has downl
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
         String log = timeStamp + ": Peer " + peerID + " has downloaded the piece " + "from " + otherID + ". Now the number of pieces it has is " + numOfPieces + ".";
+        logString(log,peerID);
     }
 
     /*
@@ -161,13 +175,21 @@ the peer who sent the piece. [piece index] is the piece index the peer has downl
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
         String log = timeStamp + ": Peer " + peerID + " had downloaded the complete file.";
+        logString(log,peerID);
     }
 
     public void logString(String s, int peerID){
 
-        String peerDirectory = "./peer_" + peerID + "/";
+        String peerDirectory = "\\peer_" + peerID + "\\";
         String peerLogFile = "log_peer_" + peerID + ".log";
+        String currentDir = System.getProperty("user.dir");
+        String fileName = currentDir+peerDirectory+peerLogFile;
+        System.out.println(fileName);
 
+        File theDir = new File(currentDir+peerDirectory);       //creates the directory needed for the file
+        if (!theDir.exists()) theDir.mkdir();
+
+        // Write your data
 
         /*try (PrintStream out = new PrintStream(new FileOutputStream(peerDirectory+peerLogFile))) {
             out.print(s);
@@ -176,10 +198,17 @@ the peer who sent the piece. [piece index] is the piece index the peer has downl
 
         try
         {
-
-            FileWriter fw = new FileWriter(peerDirectory+peerLogFile,true); //the true will append the new data
-            fw.write(s+"\n");//appends the string to the file
+            //writes the file log and catches errors if they occur.
+            //FileWriter fw = new FileWriter(fileName,true); //the true will append the new data
+            BufferedWriter bw = new BufferedWriter(new FileWriter(fileName,true));
+            /*fw.write(s+"\n");
+            fw.newLine();
             fw.close();
+             */
+            bw.write(s+"\n");//appends the string to the file
+            bw.newLine();
+            bw.close();
+
         }
         catch(IOException ioe)
         {
@@ -187,6 +216,7 @@ the peer who sent the piece. [piece index] is the piece index the peer has downl
         }
 
     }
+
 
 
 }

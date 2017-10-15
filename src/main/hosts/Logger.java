@@ -1,4 +1,8 @@
+package main.hosts;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.io.*;
 
 public class Logger{
 
@@ -46,7 +50,7 @@ made TCP connection to [peer_ID 1].
 
         String log = timeStamp + ": Peer " + peerID + " has the preferred neighbors ";
 
-        for(int i = 0, i > neighborList.length, i++){
+        for(int i = 0; i > neighborList.length; i++){
             log = log + neighborList[i] + ", ";
         }
 

@@ -2,9 +2,7 @@
 
 public class Logger{
 
-    private peerIDToBeLogged;
-    private String peerDirectory = "./peer_" + peerIDToBeLogged + "/";
-    private String peerLogFile = "log_peer_" + peerIDToBeLogged + ".log";
+
 
     /*
     Whenever a peer makes a TCP connection to other peer, it generates the following log:
@@ -159,6 +157,31 @@ the peer who sent the piece. [piece index] is the piece index the peer has downl
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
         String log = timeStamp + ": Peer " + peerID + " had downloaded the complete file.";
+    }
+
+    public void logString(String s, int peerID){
+
+        String peerDirectory = "./peer_" + peerID + "/";
+        String peerLogFile = "log_peer_" + peerID + ".log";
+
+
+        /*try (PrintStream out = new PrintStream(new FileOutputStream(peerDirectory+peerLogFile))) {
+            out.print(s);
+            out.close();
+        }*/
+
+        try
+        {
+
+            FileWriter fw = new FileWriter(peerDirectory+peerLogFile,true); //the true will append the new data
+            fw.write(s+"\n");//appends the string to the file
+            fw.close();
+        }
+        catch(IOException ioe)
+        {
+            System.err.println("IOException: " + ioe.getMessage());
+        }
+
     }
 
 

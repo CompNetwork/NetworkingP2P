@@ -62,6 +62,7 @@ public class CommonConfigReader {
                         + ((lineScanner.hasNext()) ? "\nRemaining Line Contents are: " + lineScanner.next() : "\nNo value found in line.") + e.toString());
             }
         }
+        sc.close();
         CommonConfigData.CommonConfigDataBuilder builder = CommonConfigData.getBuilder();
         for (FillProperty fillProperty : propertyMap.values() ) {
             fillProperty.write(builder);

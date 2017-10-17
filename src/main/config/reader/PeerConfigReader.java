@@ -74,6 +74,7 @@ public class PeerConfigReader {
             data.add(getPeerConfigDataFromLine(sc.nextLine(),currentLineIdx));
 
         }
+        sc.close();
     }
 
 }

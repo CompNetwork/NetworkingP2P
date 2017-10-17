@@ -6,16 +6,17 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
+import java.util.IllegalFormatException;
 import java.util.Map;
 import java.util.Scanner;
 
 public class CommonConfigReader {
-    CommonConfigData data;
-    CommonConfigData getData() {
+    private CommonConfigData data;
+    public CommonConfigData getData() {
         return data;
     }
 
-    abstract class FillProperty {
+    private abstract class FillProperty {
         public String myKeyword;
         public FillProperty(String myKeyword) {
             this.myKeyword = myKeyword;
@@ -39,23 +40,27 @@ public class CommonConfigReader {
         protected abstract void doCalledWrite(CommonConfigData.CommonConfigDataBuilder builder);
     }
 
-    Map<String, FillProperty> propertyMap = new HashMap<>();
+    private Map<String, FillProperty> propertyMap = new HashMap<>();
 
-    CommonConfigReader(File f) {
+    // Throws either FileNotFound if the file doesn't exist, or IllegalArgumentException if the file is formatted incorrectly.
+    CommonConfigReader(File f) throws FileNotFoundException, IllegalArgumentException {
         populatePropertyMap();
-        try {
-            Scanner sc = new Scanner(f);
-            while(sc.hasNextLine()) {
-                Scanner lineScanner = new Scanner(sc.nextLine());
-                String keyword = lineScanner.next();
-                FillProperty fillProp = propertyMap.get(keyword);
-                if ( fillProp == null ) {
-                    throw new IllegalArgumentException("Error, unrecognized keyword found in common config file!");
-                }
-                fillProp.store(keyword, sc);
+        Scanner sc = new Scanner(f);
+        for(int currentLineIdxs = 0; sc.hasNextLine(); ++currentLineIdxs) {
+            Scanner lineScanner = new Scanner(sc.nextLine());
+            String keyword = lineScanner.next();
+            FillProperty fillProp = propertyMap.get(keyword);
+            if (fillProp == null) {
+                throw new IllegalArgumentException("Error, unrecognized keyword found in common config file!" +
+                        " Error found on line:" + currentLineIdxs
+                        + ((lineScanner.hasNext()) ? "\nLine Contents are: " + lineScanner.next() : "\nExtra blank line found"));
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            try {
+                fillProp.store(keyword, lineScanner);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Error occured parsing file, on line:" + currentLineIdxs
+                        + ((lineScanner.hasNext()) ? "\nRemaining Line Contents are: " + lineScanner.next() : "\nNo value found in line.") + e.toString());
+            }
         }
         CommonConfigData.CommonConfigDataBuilder builder = CommonConfigData.getBuilder();
         for (FillProperty fillProperty : propertyMap.values() ) {
@@ -72,7 +77,7 @@ public class CommonConfigReader {
                 if ( sc.hasNextInt()) {
                     value = sc.nextInt();
                 } else {
-                    throw new IllegalArgumentException("Expected a integer after keyword NumberOfPreferredNeighbors!");
+                    throw new IllegalArgumentException("Expected a integer after keyword NumberOfPreferredNeighbors! " + sc.next());
                 }
            }
 

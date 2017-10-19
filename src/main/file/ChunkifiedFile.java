@@ -42,11 +42,12 @@ public class ChunkifiedFile {
     // Create a file on the disk, initialized to all 0s.
     // Null if no permission or other error.
     public static ChunkifiedFile CreateFile(String filePath, int chunkSize, int fileSize) {
+        FileOutputStream fileOutputStream = null;
         try {
             File file = new File(filePath);
             //System.out.println("Making a file at! " + file.getAbsoluteFile());
             file.createNewFile();
-            FileOutputStream fileOutputStream = new FileOutputStream(file);
+             fileOutputStream = new FileOutputStream(file);
             byte bytes[] = new byte[chunkSize];
             Arrays.fill(bytes,MAGIC_CONSTANT);
             for ( int i = 0; i < fileSize; i+=chunkSize) {
@@ -57,7 +58,17 @@ public class ChunkifiedFile {
         } catch(IOException except) {
             System.err.println("Error: " + except);
             return null;
+        } finally {
+            if ( fileOutputStream != null ) {
+                try {
+                    fileOutputStream.close();
+                } catch (IOException e) {
+                   System.out.println("Unable to close file!");
+                   e.printStackTrace();
+                }
+            }
         }
+
     }
     public boolean hasChunk(int i) {
         return bitset[i];
@@ -69,8 +80,9 @@ public class ChunkifiedFile {
 
             return new DefaultValueChunk(Math.min(fileSize-i*chunkSize, chunkSize),MAGIC_CONSTANT);
         }
+        RandomAccessFile randomAccessFile = null;
         try {
-            RandomAccessFile randomAccessFile = new RandomAccessFile(file,"r");
+            randomAccessFile = new RandomAccessFile(file,"r");
             randomAccessFile.seek(chunkSize*i);
             byte[] read_in = new byte[chunkSize];
             int actually_read_in = randomAccessFile.read(read_in);
@@ -80,6 +92,15 @@ public class ChunkifiedFile {
         } catch(IOException except) {
             System.err.println("Returning null as a error happened, was the file deleted while the program was running?");
             return null;
+        } finally {
+            if ( randomAccessFile != null ) {
+                try {
+                    randomAccessFile.close();
+                } catch (IOException e) {
+                    System.out.println("Unable to close file!");
+                    e.printStackTrace();
+                }
+            }
         }
     }
     // Sets the chunk, and writes it to disk immediately.

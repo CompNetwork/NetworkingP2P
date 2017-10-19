@@ -76,7 +76,7 @@ public class Message  {
     }
 
     //when it accepts an incoming string, it has to break it down.
-    public void Message(String s){
+    public Message(String s){
 
         //is a handshake
         if(s.substring(0,0).equals("P")){

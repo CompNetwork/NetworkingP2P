@@ -75,6 +75,29 @@ public class Message  {
         full = m1+m2+m3;
     }
 
+    //when it accepts an incoming string, it has to break it down.
+    public Message(String s){
+
+        //is a handshake
+        if(s.substring(0,0).equals("P")){
+            m1 = "P2PFILESHARINGPROJ";
+            m2 = "0000000000"; //28 is where id begins
+            m3 = s.substring(28,31);
+        }
+        else{
+            m1 = s.substring(0,3);      //size
+            m2 = s.substring(4,4);      //message type
+            int size = s.length();
+            if(size-5  > 0)
+                m3 = s.substring(5,size);
+            else
+                m3 = "";
+        }
+
+        full = m1+m2+m3;
+
+    }
+
     
 
     public String getM1() {
@@ -101,13 +124,8 @@ public class Message  {
         this.m3 = message;
     }
 
-    //isn't this redundant? when creating a message the parts won't be in one string
-    //at least at first, the part that is important is being able to return the seperate part
-    //in order to figure out what the message is when it is delivered
-    private void setMs(String text){
-        this.m1 = text.substring(0)+1;
-        this.m2 = text.substring(0)+2;
-        this.m3 = text.substring(0)+3;
-    }
+    public String getFull(){return this.full;}
+
+    public void setFull(String message){this.full =message; }
 
 }

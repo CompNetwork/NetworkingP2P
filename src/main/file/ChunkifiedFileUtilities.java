@@ -1,11 +1,10 @@
 package main.file;
 
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 public class ChunkifiedFileUtilities {
-    public static byte[] getByteSet(boolean[] bitset) {
+    public static byte[] getByteSetFromBitSet(boolean[] bitset) {
         int bytesetLength = (int) Math.ceil(bitset.length/8.0);
         byte byteset[] = new byte[bytesetLength];
 
@@ -29,7 +28,7 @@ public class ChunkifiedFileUtilities {
     }
 
     public static String getStringFromBitSet(boolean[] bitset) {
-        return getStringFromByteSet(getByteSet(bitset));
+        return getStringFromByteSet(getByteSetFromBitSet(bitset));
     }
 
     // Convert the given byteset to a bitset.
@@ -53,6 +52,10 @@ public class ChunkifiedFileUtilities {
         }
 
         return nonBoxedBitSet;
+    }
+
+    public static byte[] getByteSetFromString(String input) {
+        return input.getBytes(StandardCharsets.ISO_8859_1);
     }
 
 

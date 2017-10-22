@@ -10,7 +10,7 @@ public class ChunkifiedFileUtilitiesTestt {
     @Test
     public void getByteSet() throws Exception {
         boolean[] bitset = getBitSetFromString("10001110 111");
-        byte[] byteset = ChunkifiedFileUtilities.getByteSet(bitset);
+        byte[] byteset = ChunkifiedFileUtilities.getByteSetFromBitSet(bitset);
 
         Assert.assertEquals(2,byteset.length);
         //System.out.println("Expected: " + Integer.toBinaryString(0xb1) + " Found: " + Integer.toBinaryString(byteset[0] &  0xff));
@@ -21,12 +21,13 @@ public class ChunkifiedFileUtilitiesTestt {
         char charA = (char)0x8e;
         char charB = (char)0xE0;
         Assert.assertEquals(Character.toString(charA)+Character.toString(charB),ChunkifiedFileUtilities.getStringFromBitSet(bitset));
+        Assert.assertArrayEquals(byteset,ChunkifiedFileUtilities.getByteSetFromString(Character.toString(charA)+Character.toString(charB)));
     }
 
     @Test
     public void getUnder1ByteSet() throws Exception {
         boolean[] bitset = getBitSetFromString("1011000");
-        byte[] byteset = ChunkifiedFileUtilities.getByteSet(bitset);
+        byte[] byteset = ChunkifiedFileUtilities.getByteSetFromBitSet(bitset);
 
         Assert.assertEquals(1,byteset.length);
         byte expectedBytes[] = {(byte)0xb0};
@@ -40,7 +41,7 @@ public class ChunkifiedFileUtilitiesTestt {
     @Test
     public void getExactly1Byte() throws Exception {
         boolean[] bitset = getBitSetFromString("10110000");
-        byte[] byteset = ChunkifiedFileUtilities.getByteSet(bitset);
+        byte[] byteset = ChunkifiedFileUtilities.getByteSetFromBitSet(bitset);
 
         Assert.assertEquals(1,byteset.length);
         byte expectedBytes[] = {(byte)0xb0};
@@ -54,7 +55,7 @@ public class ChunkifiedFileUtilitiesTestt {
     @Test
     public void getOneByteAllZeroes() throws Exception {
         boolean[] bitset = getBitSetFromString("00000000");
-        byte[] byteset = ChunkifiedFileUtilities.getByteSet(bitset);
+        byte[] byteset = ChunkifiedFileUtilities.getByteSetFromBitSet(bitset);
 
         Assert.assertEquals(1,byteset.length);
         byte expectedBytes[] = {(byte)0x00};
@@ -67,7 +68,7 @@ public class ChunkifiedFileUtilitiesTestt {
     @Test
     public void getOneByteAllOnes() throws Exception {
         boolean[] bitset = getBitSetFromString("11111111");
-        byte[] byteset = ChunkifiedFileUtilities.getByteSet(bitset);
+        byte[] byteset = ChunkifiedFileUtilities.getByteSetFromBitSet(bitset);
 
         Assert.assertEquals(1,byteset.length);
         byte expectedBytes[] = {(byte)0xFF};

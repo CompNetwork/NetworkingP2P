@@ -1,5 +1,8 @@
 package main.file;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
 public class ChunkifiedFileUtilities {
     public static byte[] getByteSet(boolean[] bitset) {
         int bytesetLength = (int) Math.ceil(bitset.length/8.0);
@@ -20,7 +23,16 @@ public class ChunkifiedFileUtilities {
         return byteset;
     }
 
+    public static String getStringFromByteSet(byte[] byteset) {
+        return new String(byteset,  StandardCharsets.ISO_8859_1);
+    }
+
+    public static String getStringFromBitSet(boolean[] bitset) {
+        return getStringFromByteSet(getByteSet(bitset));
+    }
+
     public static boolean[] getBitSet(byte[] byteset) {
+
         return null;
     }
 }

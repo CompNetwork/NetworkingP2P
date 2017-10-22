@@ -3,11 +3,7 @@ package main.file;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
-
-import static org.junit.Assert.*;
 
 public class ChunkifiedFileUtilitiesTestt {
 
@@ -20,7 +16,7 @@ public class ChunkifiedFileUtilitiesTestt {
         //System.out.println("Expected: " + Integer.toBinaryString(0xb1) + " Found: " + Integer.toBinaryString(byteset[0] &  0xff));
         byte expectedBytes[] = {(byte)0x8e,(byte)0xE0};
         Assert.assertArrayEquals(expectedBytes,byteset);
-        Assert.assertArrayEquals(bitset,ChunkifiedFileUtilities.getBitSet(byteset,bitset.length));
+        Assert.assertArrayEquals(bitset,ChunkifiedFileUtilities.getBitSetFromByteSet(byteset,bitset.length));
         // Check the string rep also
         char charA = (char)0x8e;
         char charB = (char)0xE0;
@@ -35,7 +31,7 @@ public class ChunkifiedFileUtilitiesTestt {
         Assert.assertEquals(1,byteset.length);
         byte expectedBytes[] = {(byte)0xb0};
         Assert.assertArrayEquals(expectedBytes,byteset);
-        Assert.assertArrayEquals(bitset,ChunkifiedFileUtilities.getBitSet(byteset,bitset.length));
+        Assert.assertArrayEquals(bitset,ChunkifiedFileUtilities.getBitSetFromByteSet(byteset,bitset.length));
         // Check the string rep also
         char charA = (char)0xb0;
         Assert.assertEquals(Character.toString(charA),ChunkifiedFileUtilities.getStringFromBitSet(bitset));
@@ -49,7 +45,7 @@ public class ChunkifiedFileUtilitiesTestt {
         Assert.assertEquals(1,byteset.length);
         byte expectedBytes[] = {(byte)0xb0};
         Assert.assertArrayEquals(expectedBytes,byteset);
-        Assert.assertArrayEquals(bitset,ChunkifiedFileUtilities.getBitSet(byteset,bitset.length));
+        Assert.assertArrayEquals(bitset,ChunkifiedFileUtilities.getBitSetFromByteSet(byteset,bitset.length));
         char charA = (char)0xb0;
         Assert.assertEquals(Character.toString(charA),ChunkifiedFileUtilities.getStringFromBitSet(bitset));
     }
@@ -63,7 +59,7 @@ public class ChunkifiedFileUtilitiesTestt {
         Assert.assertEquals(1,byteset.length);
         byte expectedBytes[] = {(byte)0x00};
         Assert.assertArrayEquals(expectedBytes,byteset);
-        Assert.assertArrayEquals(bitset,ChunkifiedFileUtilities.getBitSet(byteset,bitset.length));
+        Assert.assertArrayEquals(bitset,ChunkifiedFileUtilities.getBitSetFromByteSet(byteset,bitset.length));
         char charA = (char)0x00;
         Assert.assertEquals(Character.toString(charA),ChunkifiedFileUtilities.getStringFromBitSet(bitset));
     }
@@ -76,7 +72,7 @@ public class ChunkifiedFileUtilitiesTestt {
         Assert.assertEquals(1,byteset.length);
         byte expectedBytes[] = {(byte)0xFF};
         Assert.assertArrayEquals(expectedBytes,byteset);
-        Assert.assertArrayEquals(bitset,ChunkifiedFileUtilities.getBitSet(byteset,bitset.length));
+        Assert.assertArrayEquals(bitset,ChunkifiedFileUtilities.getBitSetFromByteSet(byteset,bitset.length));
         char charA = (char)0xff;
         Assert.assertEquals(Character.toString(charA),ChunkifiedFileUtilities.getStringFromBitSet(bitset));
     }

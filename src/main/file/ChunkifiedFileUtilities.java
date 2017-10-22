@@ -35,7 +35,7 @@ public class ChunkifiedFileUtilities {
     // Convert the given byteset to a bitset.
     // Size is used to handle trailing 0s, as other wise there is no way of
     // knowing if the original bitset consisted of those 0s, or if they are an artifact of having a byte.
-    public static boolean[] getBitSet(byte[] byteset, int size) {
+    public static boolean[] getBitSetFromByteSet(byte[] byteset, int size) {
         ArrayList<Boolean> bitset = new ArrayList<>();
 
         // Copy all the values in from the byte set.
@@ -54,5 +54,6 @@ public class ChunkifiedFileUtilities {
 
         return nonBoxedBitSet;
     }
+
 
 }

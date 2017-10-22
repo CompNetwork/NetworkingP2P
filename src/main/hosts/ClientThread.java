@@ -17,6 +17,7 @@ public class ClientThread extends Thread {
         this.socket = socket;
         this.peer = peer;
         this.setSocketIO();
+        this.handshake();
     }
 
     public void run() {
@@ -70,5 +71,11 @@ public class ClientThread extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void handshake() {
+
+        Message m = new Message(this.peer.getPeerID());
+        userOutput.println(m.getFull());
     }
 }

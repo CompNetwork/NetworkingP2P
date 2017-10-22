@@ -9,8 +9,6 @@ public class ClientThread extends Thread {
 
     Socket socket = null;
     Peer peer = null;
-    ObjectInputStream in = null;
-    ObjectOutputStream out = null;
     BufferedReader cmdInput = null;
     BufferedReader userInput = null;
     PrintWriter userOutput =  null;

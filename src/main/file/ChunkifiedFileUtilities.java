@@ -2,6 +2,7 @@ package main.file;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 
 public class ChunkifiedFileUtilities {
     public static byte[] getByteSet(boolean[] bitset) {
@@ -31,8 +32,27 @@ public class ChunkifiedFileUtilities {
         return getStringFromByteSet(getByteSet(bitset));
     }
 
-    public static boolean[] getBitSet(byte[] byteset) {
+    // Convert the given byteset to a bitset.
+    // Size is used to handle trailing 0s, as other wise there is no way of
+    // knowing if the original bitset consisted of those 0s, or if they are an artifact of having a byte.
+    public static boolean[] getBitSet(byte[] byteset, int size) {
+        ArrayList<Boolean> bitset = new ArrayList<>();
 
-        return null;
+        // Copy all the values in from the byte set.
+        for ( int i = 0; i != byteset.length; ++i ) {
+            for ( int j = 0; j != 8; ++j ) {
+                int shiftFactor = 7-j;
+                byte mask = (byte) (0x01 << shiftFactor);
+                bitset.add((mask & byteset[i]) == mask);
+            }
+        }
+
+        boolean nonBoxedBitSet[] = new boolean[size];
+        for ( int i = 0; i != size; ++i ) {
+            nonBoxedBitSet[i] = bitset.get(i);
+        }
+
+        return nonBoxedBitSet;
     }
+
 }

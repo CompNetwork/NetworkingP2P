@@ -1,5 +1,9 @@
 package main.hosts;
 
+import main.config.pod.CommonConfigData;
+import main.config.reader.CommonConfigReader;
+import main.file.ChunkifiedFile;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -20,17 +24,29 @@ public class Peer {
     private int port;
     private ArrayList <ClientThread> connections;
     private ServerSocket sSocket;
+    private ChunkifiedFile chunky;
+    private Logger logger;
 
     public Peer(String peerID, String hostname, int port) {
         this.peerID = peerID;
         this.hostName = hostname;
         this.port = port;
         this.connections = new ArrayList<ClientThread>();
+        this.logger = new Logger();
+        CommonConfigReader commonConfig = null;
+        try {
+            commonConfig = new CommonConfigReader(new File("./src/main/hosts/Common.cfg"));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        CommonConfigData data = commonConfig.getData();
+        this.chunky = ChunkifiedFile.CreateFile(data.getFileName(),data.getPieceSize(),data.getFileSize());
         //this.run();
     }
 
     // Starts P2P process
-    public void start(){
+    public void start() {
+        this.chunky.AvailableChunks();
         this.connect2Peers();
         this.startServer();
     }
@@ -135,8 +151,14 @@ public class Peer {
         return hostName;
     }
 
+    public Logger getLogger(){return logger;}
+
     public int getPort() {
         return port;
+    }
+
+    public ChunkifiedFile getChunky() {
+        return chunky;
     }
 
     public String getPeerID() {

@@ -12,6 +12,7 @@ public class ClientThread extends Thread {
     BufferedReader cmdInput = null;
     BufferedReader userInput = null;
     PrintWriter userOutput =  null;
+    String destination;
 
     public ClientThread(Socket socket, Peer peer) {
         this.socket = socket;
@@ -21,7 +22,7 @@ public class ClientThread extends Thread {
     }
 
     public void run() {
-        Message message = null;
+        //Message message = new Message(5, this.peer.getChunky().AvailableChunks());
         try {
             while(true) {
 
@@ -76,6 +77,9 @@ public class ClientThread extends Thread {
     private void handshake() {
 
         Message m = new Message(this.peer.getPeerID());
+        this.destination = m.getM3();
+        //FIXME need way to properly identify destination peerID.
         userOutput.println(m.getFull());
+        this.peer.getLogger().TCPConnectionLog(this.peer.getPeerID(),this.destination);
     }
 }

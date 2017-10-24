@@ -43,7 +43,7 @@ public class CommonConfigReader {
     private Map<String, FillProperty> propertyMap = new HashMap<>();
 
     // Throws either FileNotFound if the file doesn't exist, or IllegalArgumentException if the file is formatted incorrectly.
-    CommonConfigReader(File f) throws FileNotFoundException, IllegalArgumentException {
+    public CommonConfigReader(File f) throws FileNotFoundException, IllegalArgumentException {
         populatePropertyMap();
         Scanner sc = new Scanner(f);
         for(int currentLineIdxs = 0; sc.hasNextLine(); ++currentLineIdxs) {

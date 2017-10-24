@@ -1,5 +1,6 @@
 package main.hosts;
 
+import main.file.ChunkifiedFileUtilities;
 import main.hosts.Message;
 
 import java.io.*;
@@ -9,20 +10,22 @@ public class ClientThread extends Thread {
 
     Socket socket = null;
     Peer peer = null;
-    ObjectInputStream in = null;
-    ObjectOutputStream out = null;
     BufferedReader cmdInput = null;
     BufferedReader userInput = null;
     PrintWriter userOutput =  null;
+    String destination;
+    Message message;
 
     public ClientThread(Socket socket, Peer peer) {
         this.socket = socket;
         this.peer = peer;
+        this.message = new Message(5, ChunkifiedFileUtilities.getStringFromBitSet(peer.getChunky().AvailableChunks()));
+
         this.setSocketIO();
+        this.handshake();
     }
 
     public void run() {
-        Message message = null;
         try {
             while(true) {
 
@@ -72,5 +75,15 @@ public class ClientThread extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void handshake() {
+
+        Message m = new Message(this.peer.getPeerID());
+        this.destination = m.getM3();
+        //FIXME need way to properly identify destination peerID.
+        //userOutput.println(m.getFull());
+        userOutput.println(this.message.getFull());
+        this.peer.getLogger().TCPConnectionLog(this.peer.getPeerID(),this.destination);
     }
 }

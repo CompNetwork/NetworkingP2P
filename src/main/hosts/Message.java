@@ -3,40 +3,38 @@ package main.hosts;
 //import java.io.Serializable;
 
 public class Message  {
-/*
-    //different types of messages such as handshake and actual messages
-    //
-    handshake message has 3 parts
-    - handshake header
-    - zero bits
-    - peer id
-    -length is 32 bytes
-    -header is 18-byte string "P2PFILESHARINGPROJ"
-    -then 10 byte zero bits
-    -then 4-byte peerID
-
-    actual messages
-    -4 byte message length field,
-    -1 byte message type field
-    -variable length message payload
-    -length does not inlcude the message length field itself
-    -message type is single value,
-        0 choke
-        1 unchoke
-        2 interested
-        3 not interested
-        4 have
-        5 bitfield
-        6 request
-        7 piece
-    -0, 1, 2, 3 have no payload
-    - 4 has 4-byte piece index field
-    - 5 each bit corresponds to whether the peer has the corresponding piece or not
-       spare bits are 0
-    - 6 has 4-byte piece index field
-    - 7 4-byte piece index field
-
-    */
+    /*
+        //different types of messages such as handshake and actual messages
+        //
+        handshake message has 3 parts
+        - handshake header
+        - zero bits
+        - peer id
+        -length is 32 bytes
+        -header is 18-byte string "P2PFILESHARINGPROJ"
+        -then 10 byte zero bits
+        -then 4-byte peerID
+        actual messages
+        -4 byte message length field,
+        -1 byte message type field
+        -variable length message payload
+        -length does not inlcude the message length field itself
+        -message type is single value,
+            0 choke
+            1 unchoke
+            2 interested
+            3 not interested
+            4 have
+            5 bitfield
+            6 request
+            7 piece
+        -0, 1, 2, 3 have no payload
+        - 4 has 4-byte piece index field
+        - 5 each bit corresponds to whether the peer has the corresponding piece or not
+           spare bits are 0
+        - 6 has 4-byte piece index field
+        - 7 4-byte piece index field
+        */
     //private static final long serialVersionID = 132437293456465438l;
     String m1;  //first part of message
     String m2;  //second part of message
@@ -51,7 +49,7 @@ public class Message  {
         full = m1+m2+m3;
 
     }
-    public Message(int mType, String payload){
+    public Message(int mType, String payload) {
         //setMs(text);
         //need to calculate message length
         int mLength = payload.length() + 1;// +1 because of mType
@@ -76,17 +74,23 @@ public class Message  {
     }
 
     //when it accepts an incoming string, it has to break it down.
-    public Message(String s){
+    public Message(String s) {
 
+        if(s.length() == 4) {
+            m1 = "P2PFILESHARINGPROJ";
+            m2 = "0000000000";
+            m3 = s;
+            full = m1 + m2 + m3;
+        }
         //is a handshake
-        if(s.substring(0,0).equals("P")){
+        else if(s.substring(0,1).equalsIgnoreCase("P")){
             m1 = "P2PFILESHARINGPROJ";
             m2 = "0000000000"; //28 is where id begins
             m3 = s.substring(28,31);
         }
         else{
             m1 = s.substring(0,3);      //size
-            m2 = s.substring(4,4);      //message type
+            m2 = s.substring(4);      //message type
             int size = s.length();
             if(size-5  > 0)
                 m3 = s.substring(5,size);
@@ -97,8 +101,6 @@ public class Message  {
         full = m1+m2+m3;
 
     }
-
-    
 
     public String getM1() {
         return this.m1;

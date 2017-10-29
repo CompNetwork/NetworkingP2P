@@ -1,4 +1,4 @@
-package main.MessageQueue;
+package main.messsage.messagequeue;
 
 import java.util.concurrent.LinkedBlockingQueue;
 

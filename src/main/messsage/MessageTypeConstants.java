@@ -1,4 +1,4 @@
-package message;
+package main.messsage;
 
 // 1 byte field that goes in messages to determine the type.
 // Using unsigned representation for now.

@@ -5,24 +5,26 @@ import main.hosts.Message;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+
 
 public class ClientThread extends Thread {
 
-    Socket socket = null;
+    boolean finHandshake;
     Peer peer = null;
+    Socket socket = null;
+    Message message;
     BufferedReader cmdInput = null;
     BufferedReader userInput = null;
     PrintWriter userOutput =  null;
-    String destination;
-    Message message;
+    String destination = null;
 
     public ClientThread(Socket socket, Peer peer) {
         this.socket = socket;
         this.peer = peer;
-        this.message = new Message(5, ChunkifiedFileUtilities.getStringFromBitSet(peer.getChunky().AvailableChunks()));
-
-        this.setSocketIO();
-        this.handshake();
+        this.setupSocketIO();
+        this.initHandshake();
     }
 
     public void run() {
@@ -34,15 +36,16 @@ public class ClientThread extends Thread {
                 }
 
                 if(userInput.ready()) {
-                    String text = userInput.readLine();
-                    userOutput.println(text);
-
+                    String rawData = userInput.readLine();
+                    message.update(rawData);
+                    handle(message);
+                    userOutput.println(rawData);
                 }
 
                 if(cmdInput.ready()) {
-                    String text =  this.cmdInput.readLine();
-                    //message = new Message(text);
-                    System.out.println(text);
+                    String rawData = this.cmdInput.readLine();
+                    message.update(rawData);
+                    handle(message);
                 }
             }
         } catch (IOException e) {
@@ -59,6 +62,45 @@ public class ClientThread extends Thread {
         }
     }
 
+    public void handle(Message message) {
+
+        int type = message.getmType();
+
+        switch ( type ) {
+            case -1 :
+                completeHandShake(message);
+                System.out.println("Handshake");
+                break;
+            case 0 :
+                System.out.println("Choke");
+                break;
+            case 1 :
+                System.out.println("Unchoke");
+                break;
+            case 2 :
+                System.out.println("Interested");
+                break;
+            case 3 :
+                System.out.println("Not Interested");
+                break;
+            case 4 :
+                System.out.println("Have");
+                break;
+            case 5 :
+                handleBitField(message);
+                System.out.println("Bitfield");
+                break;
+            case 6 :
+                System.out.println("Request");
+                break;
+            case 7 :
+                System.out.println("Piece");
+                break;
+            default:
+                System.out.print("Unknown Message Type");
+        }
+    }
+
     public void close(){
         try {
             this.socket.close();
@@ -67,7 +109,7 @@ public class ClientThread extends Thread {
         }
     }
 
-    private void setSocketIO(){
+    private void setupSocketIO(){
         try {
             this.userInput = new BufferedReader(new InputStreamReader(System.in));
             this.cmdInput = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
@@ -77,13 +119,37 @@ public class ClientThread extends Thread {
         }
     }
 
-    private void handshake() {
-
-        Message m = new Message(this.peer.getPeerID());
-        this.destination = m.getM3();
-        //FIXME need way to properly identify destination peerID.
-        //userOutput.println(m.getFull());
-        userOutput.println(this.message.getFull());
-        this.peer.getLogger().TCPConnectionLog(this.peer.getPeerID(),this.destination);
+    private void initHandshake() {
+        this.finHandshake = false;
+        message = new Message(this.peer.getPeerID());
+        userOutput.println(message.getFull());
     }
+
+    private void completeHandShake(Message message) {
+
+        String peerID = message.getM3();
+
+        if(!finHandshake) {
+            finHandshake = true;
+            this.destination = peerID;
+            this.peer.getLogger().TCPConnectionLog(this.peer.getPeerID(), this.destination);
+
+            String payload = ChunkifiedFileUtilities.getStringFromBitSet(peer.getChunky().AvailableChunks());
+            int messageLength = payload.getBytes(StandardCharsets.ISO_8859_1).length;
+            message.update(messageLength, message.BITFIELD, payload);
+
+            // Send BITFIELD
+            userOutput.println(message.getFull());
+        }
+        else {
+            throw new IllegalArgumentException("Received Multiple Handshakes");
+        }
+    }
+
+    private void handleBitField(Message message) {
+        System.out.println(message.getM3());
+    }
+
+    public Peer getPeer() { return peer; }
+
 }

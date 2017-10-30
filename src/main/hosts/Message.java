@@ -38,19 +38,34 @@ public class Message  {
 
     */
     //private static final long serialVersionID = 132437293456465438l;
+    int mType;
     String m1;  //first part of message
     String m2;  //second part of message
     String m3;  //third part of message
+    //FIXME: Commented out the full = m1+m2+m3 blocks. full is being generate based off of concatenating the ms.
     String full;//full string of message
 
-    //handshake
-    public Message(int peerID){
+    public static final int HANDSHAKE = -1;
+    public static final int CHOKE = 0;
+    public static final int INTERESTED = 2;
+    public static final int NOTINTERESTED = 3;
+    public static final int HAVE = 4;
+    public static final int BITFIELD = 5;
+    public static final int REQUEST = 6;
+    public static final int PIECE = 7;
+
+
+    // Utilized for Handshaking Process
+    public Message(int peerID) {
+        mType = HANDSHAKE;
         m1 = "P2PFILESHARINGPROJ";
         m2 = "0000000000";
         m3 = Integer.toString(peerID);
-        full = m1+m2+m3;
+        //full = m1+m2+m3;
 
     }
+
+    // FIXME: May not be useful anymore. I have added methods that alter the state of the message rather than create a new message each time.
     public Message(int mType, String payload) {
         //setMs(text);
         //need to calculate message length
@@ -72,25 +87,31 @@ public class Message  {
         }
         m2 = Integer.toString(mType);
         m3 = payload;
-        full = m1+m2+m3;
+        //full = m1+m2+m3;
     }
 
     //when it accepts an incoming string, it has to break it down.
+    // FIXME: May have extraneous functionality if we choose to only call constructor to initialize for the use of Handshaking
     public Message(String s) {
 
+        // Check Handshake Message
         if(s.length() == 4) {
+            //this.createHandshakeMessage(s);
+            mType = HANDSHAKE;
             m1 = "P2PFILESHARINGPROJ";
             m2 = "0000000000";
             m3 = s;
-            full = m1 + m2 + m3;
+            //full = m1 + m2 + m3;
         }
         //is a handshake
-        else if(s.substring(0,1).equalsIgnoreCase("P")){
+        else if(s.substring(0,1).equalsIgnoreCase("P")) {
+            //this.parseHandshakeMessage(s);
             m1 = "P2PFILESHARINGPROJ";
             m2 = "0000000000"; //28 is where id begins
             m3 = s.substring(28,31);
         }
-        else{
+        else {
+            //this.setActualMessage(s);
             m1 = s.substring(0,3);      //size
             m2 = s.substring(4);      //message type
             int size = s.length();
@@ -100,36 +121,74 @@ public class Message  {
                 m3 = "";
         }
 
-        full = m1+m2+m3;
+        //full = m1+m2+m3;
 
     }
+
+    // TODO: NEW JUNK
+    // Updates the state of the Message object depending on the rawData
+    public void update(String rawData) {
+
+        // Sets message value for handshaking
+        if(rawData.substring(0,1).equalsIgnoreCase("P")) {
+            //this.parseHandshakeMessage(s);
+            m1 = "P2PFILESHARINGPROJ";
+            m2 = "0000000000"; //28 is where id begins
+            m3 = rawData.substring(28,32);
+        }
+        // Sets message values for actual message
+        else {
+            //this.setActualMessage(s);
+            m1 = rawData.substring(0,4);      //size
+            m2 = rawData.substring(4);      //message type
+            int size = rawData.length();
+            if(size-5  > 0)
+                m3 = rawData.substring(5,size);
+            else
+                m3 = "";
+        }
+    }
+
+    // Updates the state for in class functionality
+    public void update(int messageLength, int messageType, String payload) {
+
+        this.mType = messageType;
+        setM1(pad(messageLength,4));
+        setM2(Integer.toString(messageType));
+        setM3(payload);
+    }
+
+    // Pads value with leading space character
+    private String pad(int value, int padding) {
+
+        String pval = Integer.toString(padding);
+        return String.format("%0" + pval +"d", value);
+    }
+
+    public int getmType() { return mType; }
+
+    public void setmType(int mType) { this.mType = mType; }
 
     public String getM1() {
         return this.m1;
     }
 
-    public void setM1(String message) {
-        this.m1 = message;
-    }
+    public void setM1(String message) { this.m1 = message; }
 
     public String getM2() {
         return this.m2;
     }
 
-    public void setM2(String message) {
-        this.m2 = message;
-    }
+    public void setM2(String message) { this.m2 = message; }
 
-    public String getM3() {
-        return this.m3;
-    }
+    public String getM3() { return this.m3; }
 
     public void setM3(String message) {
         this.m3 = message;
     }
 
-    public String getFull(){return this.full;}
+    public String getFull(){ return this.m1 + this.m2 + this.m3;}
 
-    public void setFull(String message){this.full =message; }
+    public void setFull(String message){ this.full = message; }
 
 }

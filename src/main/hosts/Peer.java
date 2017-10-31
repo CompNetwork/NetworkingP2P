@@ -3,6 +3,7 @@ package main.hosts;
 import main.config.pod.CommonConfigData;
 import main.config.reader.CommonConfigReader;
 import main.file.ChunkifiedFile;
+import main.logger.Logger;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -14,6 +15,7 @@ import java.util.List;
 public class Peer {
 
     private static final String PEERINFO = "./src/main/hosts/PeerInfo.cfg";
+    private static final String FILEPATH = "./src/main/hosts/Common.cfg";
     private static final int PEERID = 0;
     private static final int PEERHOSTNAME = 1;
     private static final int PEERPORT = 2;
@@ -33,20 +35,13 @@ public class Peer {
         this.port = port;
         this.connections = new ArrayList<ClientThread>();
         this.logger = new Logger();
-        CommonConfigReader commonConfig = null;
-        try {
-            commonConfig = new CommonConfigReader(new File("./src/main/hosts/Common.cfg"));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        CommonConfigData data = commonConfig.getData();
-        this.chunky = ChunkifiedFile.CreateFile(data.getFileName(),data.getPieceSize(),data.getFileSize());
+        this.chunky = initFileChunk(this.peerID);
         //this.run();
     }
 
     // Starts P2P process
     public void start() {
-        this.chunky.AvailableChunks();
+        //this.chunky.AvailableChunks();
         this.connect2Peers();
         this.startServer();
     }
@@ -108,10 +103,43 @@ public class Peer {
 
     }
 
-    // Collects all entries from PeerInfo.cfg
-    private List<String> getPeerConnList(){
-        List<String> list = new ArrayList<String>();
+    private ChunkifiedFile initFileChunk(String peerID){
 
+        ChunkifiedFile cf = null;
+        List<String> list = this.getPeerInfo();
+
+        // Checks if I have the file
+        for (int i = 0; i < list.size(); i++) {
+            String [] lineArr = list.get(i).split(" ");
+
+            if(lineArr[0].equals(this.peerID)) {
+                CommonConfigReader commonConfig = null;
+
+                // Checks if the value is valid
+                if(lineArr[3].equals("1") ||lineArr[3].equals("0")) {
+
+                    // Sets the Chunkified File data if this peer has the file
+                    if(lineArr[3].equals("1")) {
+                        try {
+                            commonConfig = new CommonConfigReader(new File(FILEPATH));
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        }
+
+                        CommonConfigData data = commonConfig.getData();
+                        cf = ChunkifiedFile.CreateFile(data.getFileName(),data.getPieceSize(),data.getFileSize());
+                    }
+                    break;
+                } else {
+                    throw new IllegalArgumentException("Error in PeerInfo.cfg");
+                }
+            }
+        }
+        return cf;
+    }
+
+    private List<String> getPeerInfo() {
+        List<String> list = new ArrayList<String>();
         try {
             String line;
             BufferedReader in = new BufferedReader(new FileReader(PEERINFO));
@@ -125,6 +153,13 @@ public class Peer {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return list;
+    }
+
+    // Collects all entries from PeerInfo.cfg
+    private List<String> getPeerConnList(){
+
+        List<String> list = this.getPeerInfo();
 
         int i = 0;
         boolean found = false;

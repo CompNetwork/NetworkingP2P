@@ -103,7 +103,7 @@ public class Peer {
 
     }
 
-    private ChunkifiedFile initFileChunk(String peerID){
+    private ChunkifiedFile initFileChunk(String peerID) {
 
         ChunkifiedFile cf = null;
         List<String> list = this.getPeerInfo();
@@ -116,18 +116,23 @@ public class Peer {
                 CommonConfigReader commonConfig = null;
 
                 // Checks if the value is valid
-                if(lineArr[3].equals("1") ||lineArr[3].equals("0")) {
+                if(lineArr[3].equals("1") || lineArr[3].equals("0")) {
+
+                    try {
+                        commonConfig = new CommonConfigReader(new File(FILEPATH));
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+
+                    CommonConfigData data = commonConfig.getData();
 
                     // Sets the Chunkified File data if this peer has the file
                     if(lineArr[3].equals("1")) {
-                        try {
-                            commonConfig = new CommonConfigReader(new File(FILEPATH));
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        }
 
-                        CommonConfigData data = commonConfig.getData();
-                        cf = ChunkifiedFile.CreateFile(data.getFileName(),data.getPieceSize(),data.getFileSize());
+                        cf = ChunkifiedFile.GetFromExisingFile(data.getFileName(), data.getPieceSize(), data.getFileSize());
+                    } else {
+
+                        cf = ChunkifiedFile.CreateFile(data.getFileName(), data.getPieceSize(), data.getFileSize());
                     }
                     break;
                 } else {
@@ -186,7 +191,7 @@ public class Peer {
         return hostName;
     }
 
-    public Logger getLogger(){return logger;}
+    public Logger getLogger(){ return logger;}
 
     public int getPort() {
         return port;

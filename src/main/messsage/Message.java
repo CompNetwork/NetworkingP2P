@@ -1,4 +1,4 @@
-package main.hosts;
+package main.messsage;
 
 //import java.io.Serializable;
 

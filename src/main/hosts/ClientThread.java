@@ -1,12 +1,11 @@
 package main.hosts;
 
 import main.file.ChunkifiedFileUtilities;
-import main.hosts.Message;
+import main.messsage.Message;
 
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 
 
 public class ClientThread extends Thread {
@@ -146,9 +145,38 @@ public class ClientThread extends Thread {
         }
     }
 
+    // Actual Message #0
+    private void handleChoke(Message message) { }
+
+    // Actual Message #1
+    private void handleUnchoke(Message message) { }
+
+    // Actual Message #2
+    private void interested(Message message) { }
+
+    // Actual Message #3
+    private void notInterested(Message message) { }
+
+    // Actual Message #4
+    private void have(Message message) { }
+
+    // Actual Message #5
     private void handleBitField(Message message) {
+
         System.out.println(message.getM3());
+        // Evaluate whether interested or not
     }
+
+    // Actual Message #6
+    private void handleRequest(Message message) {
+        String payload = message.getM3();
+        byte[] bSet = ChunkifiedFileUtilities.getByteSetFromString(payload);
+
+
+    }
+
+    // Actual Message #7
+    private void handlePiece(Message message) { }
 
     public Peer getPeer() { return peer; }
 

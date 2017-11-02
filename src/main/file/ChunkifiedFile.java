@@ -70,9 +70,11 @@ public class ChunkifiedFile {
         }
 
     }
+
     public boolean hasChunk(int i) {
         return bitset[i];
     }
+
     // Return the chunk if exists, else return a chunk fully populated with 42
     public FileChunk getChunk(int i) {
         if ( ! hasChunk(i)) {
@@ -103,6 +105,7 @@ public class ChunkifiedFile {
             }
         }
     }
+
     // Sets the chunk, and writes it to disk immediately.
     public void setChunk(int i, FileChunk data) {
         if (  i * chunkSize > fileSize || i < 0 || (i*chunkSize + data.size()) > fileSize ) {
@@ -136,8 +139,7 @@ public class ChunkifiedFile {
     public int getChunkCount() {
         return bitset.length;
     }
+
     // Chunks that are 1 are currently on the disk, chunks that are 0 are not available.
-    public boolean[] AvailableChunks() {
-        return bitset;
-    }
+    public boolean[] AvailableChunks() { return bitset; }
 }

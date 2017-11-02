@@ -16,17 +16,11 @@ public class ClientThread extends Thread {
     RemotePeer remotePeer = null;
     Socket socket = null;
     Message message;
-    BufferedReader cmdInput = null;
+    BufferedReader in = null;
     BufferedReader userInput = null;
-    PrintWriter userOutput =  null;
+    PrintWriter out =  null;
 
     private boolean finHandshake;
-    private void setFinHandshake(boolean finHandshake) {
-        this.finHandshake = finHandshake;
-    }
-    private boolean getFinHandshake() {
-        return finHandshake;
-    }
 
     public ClientThread(Socket socket, Peer localPeer, RemotePeer remotePeer) {
         this.socket = socket;
@@ -40,7 +34,7 @@ public class ClientThread extends Thread {
         try {
             while(true) {
 
-                if(!cmdInput.ready() && !userInput.ready()) {
+                if(!in.ready() && !userInput.ready()) {
                     Thread.sleep(500);
                 }
 
@@ -48,11 +42,11 @@ public class ClientThread extends Thread {
                     String rawData = userInput.readLine();
                     message.update(rawData);
                     handle(message);
-                    userOutput.println(rawData);
+                    out.println(rawData);
                 }
 
-                if(cmdInput.ready()) {
-                    String rawData = this.cmdInput.readLine();
+                if(in.ready()) {
+                    String rawData = this.in.readLine();
                     message.update(rawData);
                     handle(message);
                 }
@@ -122,19 +116,23 @@ public class ClientThread extends Thread {
     private void setupSocketIO() {
         try {
             this.userInput = new BufferedReader(new InputStreamReader(System.in));
-            this.cmdInput = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
-            this.userOutput = new PrintWriter(this.socket.getOutputStream(), true);
+            this.in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
+            this.out = new PrintWriter(this.socket.getOutputStream(), true);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
+    private void setFinHandshake(boolean finHandshake) { this.finHandshake = finHandshake; }
+
+    private boolean getFinHandshake() { return finHandshake; }
 
     /*************** Protocol Methods ****************/
     
     private void initHandshake() {
         setFinHandshake(false);
         message = new Message(this.localPeer.getPeerID());
-        userOutput.println(message.getFull());
+        out.println(message.getFull());
     }
 
     private void completeHandShake(Message message) {
@@ -199,7 +197,7 @@ public class ClientThread extends Thread {
             message.update(messageLength, message.BITFIELD, payload);
 
             // Send BITFIELD
-            userOutput.println(message.getFull());
+            out.println(message.getFull());
         }
         else {
             throw new IllegalArgumentException("Received Multiple Handshakes");
@@ -208,7 +206,7 @@ public class ClientThread extends Thread {
 
     private void sendInterestedMessageToRemotePeer() {
         message.update(0, Message.INTERESTED,"");
-        userOutput.println(message.getFull());
+        out.println(message.getFull());
     }
 
     // Actual Message #5 incoming

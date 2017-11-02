@@ -5,7 +5,8 @@ import java.util.Arrays;
 public class ByteArrayUtilities {
     // Assuming bigendianness
     public static int recombine4BytesIntoInts(byte msb, byte a, byte b, byte lsb) {
-        return (msb << 24) | (a << 16) | (b << 8 ) | lsb;
+        final int maskConstant = 0x000000FF;
+        return ((msb &maskConstant) << 24) | ((a & maskConstant) << 16) | ((b & maskConstant) << 8) | (lsb & maskConstant);
     }
 
     // Assuming bigendianness

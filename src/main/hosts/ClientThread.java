@@ -1,7 +1,9 @@
 package main.hosts;
 
 import main.file.ChunkifiedFileUtilities;
+import main.messsage.ByteArrayUtilities;
 import main.messsage.Message;
+import main.messsage.MessageTypeConstants;
 
 import java.io.*;
 import java.net.Socket;
@@ -16,9 +18,8 @@ public class ClientThread extends Thread {
     RemotePeer remotePeer = null;
     Socket socket = null;
     Message message;
-    BufferedReader cmdInput = null;
-    BufferedReader userInput = null;
-    PrintWriter userOutput =  null;
+    DataInputStream userInput = null;
+    OutputStream userOutput =  null;
 
     private boolean finHandshake;
     private void setFinHandshake(boolean finHandshake) {
@@ -28,7 +29,7 @@ public class ClientThread extends Thread {
         return finHandshake;
     }
 
-    public ClientThread(Socket socket, Peer localPeer, RemotePeer remotePeer) {
+    public ClientThread(Socket socket, Peer localPeer, RemotePeer remotePeer) throws IOException {
         this.socket = socket;
         this.localPeer = localPeer;
         this.remotePeer = remotePeer;
@@ -36,30 +37,35 @@ public class ClientThread extends Thread {
         this.initHandshake();
     }
 
+
     public void run() {
         try {
-            while(true) {
-
-                if(!cmdInput.ready() && !userInput.ready()) {
-                    Thread.sleep(500);
+            while (true) {
+                byte[] header = new byte[5];
+                userInput.readFully(header);
+                byte[] body = null;
+                // This is a handshake message!
+                // Message length can be anything.
+                // But the 5th byte must be the I in P@PFILESHARINGPROJ, so
+                // WE can consider a handshake message to have a type value of 'I', or 73
+                if (header[4] == 'I') {
+                    // This is a handshake message
+                    int remainingLength = 32 - 5;
+                    body = new byte[remainingLength];
+                    userInput.read(body);
+                } else {
+                    // This is a "actual" message!
+                    int remainingLength = ByteArrayUtilities.recombine4BytesIntoInts(header[0], header[1], header[2], header[3]);
+                    body = new byte[remainingLength];
+                    userInput.read(body);
                 }
-
-                if(userInput.ready()) {
-                    String rawData = userInput.readLine();
-                    message.update(rawData);
-                    handle(message);
-                    userOutput.println(rawData);
-                }
-
-                if(cmdInput.ready()) {
-                    String rawData = this.cmdInput.readLine();
-                    message.update(rawData);
-                    handle(message);
-                }
+                byte[] fullMessage = ByteArrayUtilities.combineTwoByteArrays(header, body);
+                message.update(fullMessage);
+                handle(message);
             }
+        } catch (EOFException e) {
+            System.out.println("EOF hit, socket closed. Hopefully this is because the program is terminating.");
         } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
             e.printStackTrace();
         } finally {
             System.out.println("Closing socket" + this.socket + " to Peer" + localPeer.getPeerID());
@@ -71,39 +77,39 @@ public class ClientThread extends Thread {
         }
     }
 
-    public void handle(Message message) {
+    public void handle(Message message) throws IOException {
 
-        int type = message.getmType();
+        byte type = message.getmType();
 
         switch ( type ) {
-            case -1 :
+            case MessageTypeConstants.HANDSHAKE :
                 completeHandShake(message);
                 System.out.println("Handshake");
                 break;
-            case 0 :
+            case MessageTypeConstants.CHOKE :
                 System.out.println("Choke");
                 break;
-            case 1 :
+            case MessageTypeConstants.UNCHOKE:
                 System.out.println("Unchoke");
                 break;
-            case 2 :
+            case MessageTypeConstants.INTERESTED:
                 System.out.println("Interested");
                 break;
-            case 3 :
+            case MessageTypeConstants.UNINTERESTED:
                 System.out.println("Not Interested");
                 break;
-            case 4 :
+            case MessageTypeConstants.HAVE:
                 System.out.println("Have");
                 handleHave(message);
                 break;
-            case 5 :
+            case MessageTypeConstants.BITFIELD:
                 handleBitField(message);
                 System.out.println("Bitfield");
                 break;
-            case 6 :
+            case MessageTypeConstants.REQUEST:
                 System.out.println("Request");
                 break;
-            case 7 :
+            case MessageTypeConstants.PIECE:
                 System.out.println("Piece");
                 break;
             default:
@@ -121,9 +127,8 @@ public class ClientThread extends Thread {
 
     private void setupSocketIO() {
         try {
-            this.userInput = new BufferedReader(new InputStreamReader(System.in));
-            this.cmdInput = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
-            this.userOutput = new PrintWriter(this.socket.getOutputStream(), true);
+            this.userInput = new DataInputStream(this.socket.getInputStream());
+            this.userOutput = this.socket.getOutputStream();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -131,14 +136,15 @@ public class ClientThread extends Thread {
 
     /*************** Protocol Methods ****************/
     
-    private void initHandshake() {
+    private void initHandshake() throws IOException {
         setFinHandshake(false);
-        message = new Message(this.localPeer.getPeerID());
-        userOutput.println(message.getFull());
+        message = Message.createHandShakeMessageFromPeerId(this.localPeer.getPeerID());
+        userOutput.write(message.getFull());
+        userOutput.flush();
     }
 
-    private void completeHandShake(Message message) {
-        String peerID = message.getM3();
+    private void completeHandShake(Message message) throws IOException {
+        String peerID = message.getPeerId();
         this.remotePeer.setPeerId(peerID);
         sendBitField(peerID);
     }
@@ -171,8 +177,8 @@ public class ClientThread extends Thread {
     private void sendHave(){}
 
     // Actual Message #4 incoming
-    private void handleHave(Message message) {
-        String indexHave = message.getM3();
+    private void handleHave(Message message) throws IOException {
+        String indexHave = message.getPeerId();
         // TODO: Mbregg Use a pattern to fix this, this is ugly!
         // Also test that this works!
         int chunkIndex = Integer.parseInt(indexHave);
@@ -188,27 +194,28 @@ public class ClientThread extends Thread {
     }
 
     // Actual Message #5 outgoing
-    private void sendBitField(String peerID) {
+    private void sendBitField(String peerID) throws IOException {
         if(!this.getFinHandshake()) {
             this.setFinHandshake(true);
             this.remotePeer.setPeerId(peerID);
             this.localPeer.getLogger().TCPConnectionLog(this.localPeer.getPeerID(), this.remotePeer.getPeerID());
 
-            String payload = ChunkifiedFileUtilities.getStringFromBitSet(localPeer.getChunky().AvailableChunks());
-            int messageLength = payload.getBytes(StandardCharsets.ISO_8859_1).length;
-            message.update(messageLength, message.BITFIELD, payload);
+            byte[] payload = ChunkifiedFileUtilities.getByteSetFromBitSet(localPeer.getChunky().AvailableChunks());
+            message.update(MessageTypeConstants.BITFIELD, payload);
 
             // Send BITFIELD
-            userOutput.println(message.getFull());
+            userOutput.write(message.getFull());
+            userOutput.flush();
         }
         else {
             throw new IllegalArgumentException("Received Multiple Handshakes");
         }
     }
 
-    private void sendInterestedMessageToRemotePeer() {
-        message.update(0, Message.INTERESTED,"");
-        userOutput.println(message.getFull());
+    private void sendInterestedMessageToRemotePeer() throws IOException {
+        message.update(MessageTypeConstants.INTERESTED,null);
+        userOutput.write(message.getFull());
+        userOutput.flush();
     }
 
     // Actual Message #5 incoming

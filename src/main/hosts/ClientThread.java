@@ -94,6 +94,7 @@ public class ClientThread extends Thread {
                 break;
             case 4 :
                 System.out.println("Have");
+                handleHave(message);
                 break;
             case 5 :
                 handleBitField(message);

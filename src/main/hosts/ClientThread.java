@@ -118,7 +118,7 @@ public class ClientThread extends Thread {
         }
     }
 
-    private void setupSocketIO(){
+    private void setupSocketIO() {
         try {
             this.userInput = new BufferedReader(new InputStreamReader(System.in));
             this.cmdInput = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
@@ -128,6 +128,8 @@ public class ClientThread extends Thread {
         }
     }
 
+    /*************** Protocol Methods ****************/
+    
     private void initHandshake() {
         setFinHandshake(false);
         message = new Message(this.localPeer.getPeerID());
@@ -135,41 +137,40 @@ public class ClientThread extends Thread {
     }
 
     private void completeHandShake(Message message) {
-
         String peerID = message.getM3();
         this.remotePeer.setPeerId(peerID);
-
-        if(!getFinHandshake()) {
-            setFinHandshake(true);
-            this.remotePeer.setPeerId(peerID);
-            this.localPeer.getLogger().TCPConnectionLog(this.localPeer.getPeerID(), remotePeer.getPeerID());
-
-            String payload = ChunkifiedFileUtilities.getStringFromBitSet(localPeer.getChunky().AvailableChunks());
-            int messageLength = payload.getBytes(StandardCharsets.ISO_8859_1).length;
-            message.update(messageLength, message.BITFIELD, payload);
-
-            // Send BITFIELD
-            userOutput.println(message.getFull());
-        }
-        else {
-            throw new IllegalArgumentException("Received Multiple Handshakes");
-        }
+        sendBitField(peerID);
     }
 
-    // Actual Message #0
+    // Actual Message #0 outgoing
+    private void sendChoke(){}
+
+    // Actual Message #0 incoming
     private void handleChoke(Message message) { }
 
-    // Actual Message #1
+    // Actual Message #1 outgoing
+    private void sendUnchoke(){}
+
+    // Actual Message #1 incoming
     private void handleUnchoke(Message message) { }
 
-    // Actual Message #2
-    private void interested(Message message) { }
+    // Actual Message #2 outgoing
+    private void sendInterested(){}
 
-    // Actual Message #3
-    private void notInterested(Message message) { }
+    // Actual Message #2 incoming
+    private void handleInterested(Message message) { }
 
-    // Actual Message #4
-    private void have(Message message) {
+    // Actual Message #3 outgoing
+    private void sendNotInterested(){}
+
+    // Actual Message #3 incoming
+    private void handleNotInterested(Message message) { }
+
+    // Actual Message #4 outgoing
+    private void sendHave(){}
+
+    // Actual Message #4 incoming
+    private void handleHave(Message message) {
         String indexHave = message.getM3();
         // TODO: Mbregg Use a pattern to fix this, this is ugly!
         // Also test that this works!
@@ -185,27 +186,58 @@ public class ClientThread extends Thread {
         }
     }
 
+    // Actual Message #5 outgoing
+    private void sendBitField(String peerID) {
+        if(!this.getFinHandshake()) {
+            this.setFinHandshake(true);
+            this.remotePeer.setPeerId(peerID);
+            this.localPeer.getLogger().TCPConnectionLog(this.localPeer.getPeerID(), this.remotePeer.getPeerID());
+
+            String payload = ChunkifiedFileUtilities.getStringFromBitSet(localPeer.getChunky().AvailableChunks());
+            int messageLength = payload.getBytes(StandardCharsets.ISO_8859_1).length;
+            message.update(messageLength, message.BITFIELD, payload);
+
+            // Send BITFIELD
+            userOutput.println(message.getFull());
+        }
+        else {
+            throw new IllegalArgumentException("Received Multiple Handshakes");
+        }
+    }
+
     private void sendInterestedMessageToRemotePeer() {
         // TODO: Mbregg
     }
 
-    // Actual Message #5
+    // Actual Message #5 incoming
     private void handleBitField(Message message) {
         System.out.println(message.getM3());
         // Evaluate whether interested or not
     }
 
-    // Actual Message #6
-    private void handleRequest(Message message) {
-        String payload = message.getM3();
-        byte[] bSet = ChunkifiedFileUtilities.getByteSetFromString(payload);
+    // Actual Message #6 outgoing
+    private void sendRequest() {
+//        String payload = message.getM3();
+//        byte[] bSet = ChunkifiedFileUtilities.getByteSetFromString(payload);
+//        this.peer.getChunky().
+//        String payload = "";
+//        message.update(1,message.REQUEST, payload);
+//        userOutput.println(message.getFull());
+    }
 
+    // Actual Message #6 incoming
+    private void handleRequest(Message message) {
+
+        // randomly pick an index with an empty bit value
+
+//        if(this.peer.getChunky().hasChunk(0));
 
     }
 
-    // Actual Message #7
-    private void handlePiece(Message message) { }
-
     public Peer getLocalPeer() { return localPeer; }
 
+    // Actual Message #7 outgoing
+    private void sendPiece() {}
+    // Actual Message #7 incoming
+    private void handlePiece(Message message) { }
 }

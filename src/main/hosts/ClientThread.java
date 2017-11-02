@@ -206,7 +206,8 @@ public class ClientThread extends Thread {
     }
 
     private void sendInterestedMessageToRemotePeer() {
-        // TODO: Mbregg
+        message.update(0, Message.INTERESTED,"");
+        userOutput.println(message.getFull());
     }
 
     // Actual Message #5 incoming

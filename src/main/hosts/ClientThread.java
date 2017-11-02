@@ -10,18 +10,28 @@ import java.nio.charset.StandardCharsets;
 
 public class ClientThread extends Thread {
 
-    boolean finHandshake;
-    Peer peer = null;
+    // Knowing if this is the localPeer (aka this machine)
+    // or the remote peer is super confusing, so I renamed
+    Peer localPeer = null;
+    RemotePeer remotePeer = null;
     Socket socket = null;
     Message message;
     BufferedReader cmdInput = null;
     BufferedReader userInput = null;
     PrintWriter userOutput =  null;
-    String destination = null;
 
-    public ClientThread(Socket socket, Peer peer) {
+    private boolean finHandshake;
+    private void setFinHandshake(boolean finHandshake) {
+        this.finHandshake = finHandshake;
+    }
+    private boolean getFinHandshake() {
+        return finHandshake;
+    }
+
+    public ClientThread(Socket socket, Peer localPeer, RemotePeer remotePeer) {
         this.socket = socket;
-        this.peer = peer;
+        this.localPeer = localPeer;
+        this.remotePeer = remotePeer;
         this.setupSocketIO();
         this.initHandshake();
     }
@@ -52,7 +62,7 @@ public class ClientThread extends Thread {
         } catch (InterruptedException e) {
             e.printStackTrace();
         } finally {
-            System.out.println("Closing socket" + this.socket + " to Peer" + peer.getPeerID());
+            System.out.println("Closing socket" + this.socket + " to Peer" + localPeer.getPeerID());
             try {
                 this.socket.close();
             } catch (IOException e) {
@@ -119,21 +129,22 @@ public class ClientThread extends Thread {
     }
 
     private void initHandshake() {
-        this.finHandshake = false;
-        message = new Message(this.peer.getPeerID());
+        setFinHandshake(false);
+        message = new Message(this.localPeer.getPeerID());
         userOutput.println(message.getFull());
     }
 
     private void completeHandShake(Message message) {
 
         String peerID = message.getM3();
+        this.remotePeer.setPeerId(peerID);
 
-        if(!finHandshake) {
-            finHandshake = true;
-            this.destination = peerID;
-            this.peer.getLogger().TCPConnectionLog(this.peer.getPeerID(), this.destination);
+        if(!getFinHandshake()) {
+            setFinHandshake(true);
+            this.remotePeer.setPeerId(peerID);
+            this.localPeer.getLogger().TCPConnectionLog(this.localPeer.getPeerID(), remotePeer.getPeerID());
 
-            String payload = ChunkifiedFileUtilities.getStringFromBitSet(peer.getChunky().AvailableChunks());
+            String payload = ChunkifiedFileUtilities.getStringFromBitSet(localPeer.getChunky().AvailableChunks());
             int messageLength = payload.getBytes(StandardCharsets.ISO_8859_1).length;
             message.update(messageLength, message.BITFIELD, payload);
 
@@ -158,11 +169,28 @@ public class ClientThread extends Thread {
     private void notInterested(Message message) { }
 
     // Actual Message #4
-    private void have(Message message) { }
+    private void have(Message message) {
+        String indexHave = message.getM3();
+        // TODO: Mbregg Use a pattern to fix this, this is ugly!
+        // Also test that this works!
+        int chunkIndex = Integer.parseInt(indexHave);
+
+        // Store the chunk before we forget.
+        // We should only receive have messages for chunks the peer didn't have.
+        // Doesn't matter much anyway, we can send out interested messages as many times as we want.
+        this.remotePeer.setBit(chunkIndex,true);
+        if ( !this.getLocalPeer().getChunky().hasChunk(chunkIndex) ) {
+            // If we don't have this chunk, then we are interested!
+            sendInterestedMessageToRemotePeer();
+        }
+    }
+
+    private void sendInterestedMessageToRemotePeer() {
+        // TODO: Mbregg
+    }
 
     // Actual Message #5
     private void handleBitField(Message message) {
-
         System.out.println(message.getM3());
         // Evaluate whether interested or not
     }
@@ -178,6 +206,6 @@ public class ClientThread extends Thread {
     // Actual Message #7
     private void handlePiece(Message message) { }
 
-    public Peer getPeer() { return peer; }
+    public Peer getLocalPeer() { return localPeer; }
 
 }

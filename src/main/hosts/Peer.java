@@ -61,8 +61,8 @@ public class Peer {
 
                 System.out.println("I am " + this.peerID + " attempting to connect with " + peerCol[PEERID]);
                 Socket s = new Socket(peerCol[PEERHOSTNAME], Integer.valueOf(peerCol[PEERPORT]));
-
-                ClientThread ct = new ClientThread(s, this);
+                RemotePeer remotePeer = new RemotePeer(""+PEERID,chunky.getChunkCount());
+                ClientThread ct = new ClientThread(s, this,remotePeer);
                 ct.start();
                 this.connections.add(ct);
 
@@ -86,7 +86,8 @@ public class Peer {
                 System.out.println("Awaiting connections to other peers...");
                 Socket s = this.sSocket.accept();
                 System.out.println("Peer " + this.peerID + " added new connection: " + s.toString() + " to connection list");
-                ClientThread ct = new ClientThread(s, this);
+                RemotePeer remotePeer = new RemotePeer(RemotePeer.NO_PEER_ID_YET,chunky.getChunkCount());
+                ClientThread ct = new ClientThread(s, this,remotePeer);
                 ct.start();
                 this.connections.add(ct);
             }
@@ -126,7 +127,7 @@ public class Peer {
 
                     CommonConfigData data = commonConfig.getData();
 
-                    // Sets the Chunkified File data if this peer has the file
+                    // Sets the Chunkified File data if this localPeer has the file
                     if(lineArr[3].equals("1")) {
 
                         cf = ChunkifiedFile.GetFromExisingFile(data.getFileName(), data.getPieceSize(), data.getFileSize());

@@ -140,7 +140,8 @@ public class Message  {
         else {
             //this.setActualMessage(s);
             m1 = rawData.substring(0,4);      //size
-            m2 = rawData.substring(4);      //message type
+            m2 = rawData.substring(4,5);      //message type
+            mType = Integer.parseInt(m2);
             int size = rawData.length();
             if(size-5  > 0)
                 m3 = rawData.substring(5,size);

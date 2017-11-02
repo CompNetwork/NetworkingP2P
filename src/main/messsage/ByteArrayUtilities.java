@@ -1,5 +1,7 @@
 package main.messsage;
 
+import java.util.Arrays;
+
 public class ByteArrayUtilities {
     // Assuming bigendianness
     public static int recombine4BytesIntoInts(byte msb, byte a, byte b, byte lsb) {
@@ -32,4 +34,12 @@ public class ByteArrayUtilities {
         return output;
     }
 
+    public static int recombine4ByteArrayIntoInt(byte[] m3) {
+        if ( m3.length != 4 ) {
+            System.out.println(Arrays.toString(m3));
+            System.out.println("m3 size is " + m3.length);
+            throw new IllegalArgumentException("Error, m3 must be size 4");
+        }
+        return recombine4BytesIntoInts(m3[0],m3[1],m3[2],m3[3]);
+    }
 }

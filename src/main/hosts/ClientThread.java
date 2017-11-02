@@ -178,10 +178,9 @@ public class ClientThread extends Thread {
 
     // Actual Message #4 incoming
     private void handleHave(Message message) throws IOException {
-        String indexHave = message.getPeerId();
         // TODO: Mbregg Use a pattern to fix this, this is ugly!
-        // Also test that this works!
-        int chunkIndex = Integer.parseInt(indexHave);
+        int chunkIndex = ByteArrayUtilities.recombine4ByteArrayIntoInt(message.getM3());
+        System.out.println("Obtained index # " + chunkIndex);
 
         // Store the chunk before we forget.
         // We should only receive have messages for chunks the peer didn't have.
@@ -189,6 +188,7 @@ public class ClientThread extends Thread {
         this.remotePeer.setBit(chunkIndex,true);
         if ( !this.getLocalPeer().getChunky().hasChunk(chunkIndex) ) {
             // If we don't have this chunk, then we are interested!
+            System.out.println("Sending interested message, as we don't have!");
             sendInterestedMessageToRemotePeer();
         }
     }

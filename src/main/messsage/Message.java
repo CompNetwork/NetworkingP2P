@@ -2,6 +2,10 @@ package main.messsage;
 
 //import java.io.Serializable;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+
 public class Message  {
 /*
     //different types of messages such as handshake and actual messages
@@ -38,158 +42,78 @@ public class Message  {
 
     */
     //private static final long serialVersionID = 132437293456465438l;
-    int mType;
-    String m1;  //first part of message
-    String m2;  //second part of message
-    String m3;  //third part of message
-    //FIXME: Commented out the full = m1+m2+m3 blocks. full is being generate based off of concatenating the ms.
-    String full;//full string of message
-
-    public static final int HANDSHAKE = -1;
-    public static final int CHOKE = 0;
-    public static final int INTERESTED = 2;
-    public static final int NOTINTERESTED = 3;
-    public static final int HAVE = 4;
-    public static final int BITFIELD = 5;
-    public static final int REQUEST = 6;
-    public static final int PIECE = 7;
+    byte mType;
+    byte[] m1;  //first part of message
+    byte[] m2;  //second part of message
+    byte[] m3;  //third part of message
 
 
-    // Utilized for Handshaking Process
-    public Message(int peerID) {
-        mType = HANDSHAKE;
-        m1 = "P2PFILESHARINGPROJ";
-        m2 = "0000000000";
-        m3 = Integer.toString(peerID);
-        //full = m1+m2+m3;
-
+    public static Message createHandShakeMessageFromPeerId(String peerID) {
+       Message message = new Message();
+       message.setAsHandshakeMessage(peerID.getBytes(StandardCharsets.ISO_8859_1));
+       return message;
     }
 
-    // FIXME: May not be useful anymore. I have added methods that alter the state of the message rather than create a new message each time.
-    public Message(int mType, String payload) {
-        //setMs(text);
-        //need to calculate message length
-        int mLength = payload.length() + 1;// +1 because of mType
-
-        //add leading zeroes because it needs to be 4 bytes
-        if(mLength >= 1 && mLength <= 9){
-            m1 = "000" + Integer.toString(mLength);
-        }
-        else if(mLength >= 10 && mLength <= 99){
-            m1 = "00" + Integer.toString(mLength);
-        }
-        else if(mLength >= 100 && mLength <= 999){
-            m1 = "0" + Integer.toString(mLength);
-        }
-        else if(mLength >= 1000 && mLength <= 9999)
-        {
-            m1 = Integer.toString(mLength);
-        }
-        m2 = Integer.toString(mType);
-        m3 = payload;
-        //full = m1+m2+m3;
+    private void setAsHandshakeMessage(byte[] peerID) {
+        m1 = "P2PFILESHARINGPROJ".getBytes(StandardCharsets.ISO_8859_1);
+        m2 = new byte[10]; //28 is where id begins
+        Arrays.fill(m2,(byte)0x00);
+        m3 = peerID;
+        mType = MessageTypeConstants.HANDSHAKE;
     }
 
-    //when it accepts an incoming string, it has to break it down.
-    // FIXME: May have extraneous functionality if we choose to only call constructor to initialize for the use of Handshaking
-    public Message(String s) {
 
-        // Check Handshake Message
-        if(s.length() == 4) {
-            //this.createHandshakeMessage(s);
-            mType = HANDSHAKE;
-            m1 = "P2PFILESHARINGPROJ";
-            m2 = "0000000000";
-            m3 = s;
-            //full = m1 + m2 + m3;
-        }
-        //is a handshake
-        else if(s.substring(0,1).equalsIgnoreCase("P")) {
-            //this.parseHandshakeMessage(s);
-            m1 = "P2PFILESHARINGPROJ";
-            m2 = "0000000000"; //28 is where id begins
-            m3 = s.substring(28,31);
-        }
-        else {
-            //this.setActualMessage(s);
-            m1 = s.substring(0,3);      //size
-            m2 = s.substring(4);      //message type
-            int size = s.length();
-            if(size-5  > 0)
-                m3 = s.substring(5,size);
-            else
-                m3 = "";
-        }
-
-        //full = m1+m2+m3;
-
-    }
-
-    // TODO: NEW JUNK
     // Updates the state of the Message object depending on the rawData
-    public void update(String rawData) {
+    public void update(byte[] rawData) {
 
         // Sets message value for handshaking
-        if(rawData.substring(0,1).equalsIgnoreCase("P")) {
-            //this.parseHandshakeMessage(s);
-            m1 = "P2PFILESHARINGPROJ";
-            m2 = "0000000000"; //28 is where id begins
-            m3 = rawData.substring(28,32);
+        if (rawData[4] == 'I' ) {
+            setAsHandshakeMessage(Arrays.copyOfRange(rawData,28,32));
         }
         // Sets message values for actual message
         else {
             //this.setActualMessage(s);
-            m1 = rawData.substring(0,4);      //size
-            m2 = rawData.substring(4,5);      //message type
-            mType = Integer.parseInt(m2);
-            int size = rawData.length();
+            m1 = Arrays.copyOfRange(rawData,0,4);      //size
+            m2 = Arrays.copyOfRange(rawData,4,5);      //message type
+            mType = rawData[4];
+            int size = rawData.length;
             if(size-5  > 0)
-                m3 = rawData.substring(5,size);
+                m3 = Arrays.copyOfRange(rawData,5,size);
             else
-                m3 = "";
+                m3 = new byte[0];
         }
     }
 
-    // Updates the state for in class functionality
-    public void update(int messageLength, int messageType, String payload) {
 
-        this.mType = messageType;
-        setM1(pad(messageLength,4));
-        setM2(Integer.toString(messageType));
-        setM3(payload);
+    public byte[] getFull(){ return ByteArrayUtilities.combineThreeByteArrays(m1,m2,m3);}
+
+    public byte getmType() {
+        return mType;
     }
 
-    // Pads value with leading space character
-    private String pad(int value, int padding) {
-
-        String pval = Integer.toString(padding);
-        return String.format("%0" + pval +"d", value);
+    public byte[] getM3() {
+        return m3;
     }
 
-    public int getmType() { return mType; }
-
-    public void setmType(int mType) { this.mType = mType; }
-
-    public String getM1() {
-        return this.m1;
+    public String getPeerId() {
+        if (mType == MessageTypeConstants.HANDSHAKE ) {
+            return new String(m3,StandardCharsets.ISO_8859_1);
+        } else {
+            throw new IllegalStateException("Error, asked for an peer id, but this is not a handshake message!");
+        }
     }
 
-    public void setM1(String message) { this.m1 = message; }
+    public void update(byte type, byte[] payload) {
+        if (payload == null ) {
+            payload = new byte[0];
+            // Just for simpler impl.
+            // Not really worrying about perf atm.
+        }
+        this.m1 = ByteArrayUtilities.SplitIntInto4ByteArray(payload.length);
+        this.m2 = new byte[1];
+        m2[0] = type;
+        mType = type;
+        m3 = payload;
 
-    public String getM2() {
-        return this.m2;
     }
-
-    public void setM2(String message) { this.m2 = message; }
-
-    public String getM3() { return this.m3; }
-
-    public void setM3(String message) {
-        this.m3 = message;
-    }
-
-    public String getFull(){ return this.m1 + this.m2 + this.m3;}
-
-    public void setFull(String message){ this.full = message; }
-
 }

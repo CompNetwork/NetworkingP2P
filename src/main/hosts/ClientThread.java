@@ -71,13 +71,13 @@ public class ClientThread extends Thread {
         }
     }
 
-    public void handle(Message message) {
+    public void handle(Message incomingMessage) {
 
-        int type = message.getmType();
+        int type = incomingMessage.getmType();
 
         switch ( type ) {
             case -1 :
-                completeHandShake(message);
+                completeHandShake(incomingMessage);
                 System.out.println("Handshake");
                 break;
             case 0 :
@@ -94,9 +94,10 @@ public class ClientThread extends Thread {
                 break;
             case 4 :
                 System.out.println("Have");
+                handleHave(incomingMessage);
                 break;
             case 5 :
-                handleBitField(message);
+                handleBitField(incomingMessage);
                 System.out.println("Bitfield");
                 break;
             case 6 :
@@ -170,11 +171,14 @@ public class ClientThread extends Thread {
     private void sendHave(){}
 
     // Actual Message #4 incoming
-    private void handleHave(Message message) {
-        String indexHave = message.getM3();
+    private void handleHave(Message incomingMessage) {
+
+        System.out.println("Message is " + incomingMessage.getmType() + " " + incomingMessage.getM1() + " " + " " + incomingMessage.getM2() + " " + incomingMessage.getM3() + " : " + incomingMessage.getFull());
+        String indexHave = incomingMessage.getM3();
         // TODO: Mbregg Use a pattern to fix this, this is ugly!
         // Also test that this works!
         int chunkIndex = Integer.parseInt(indexHave);
+        System.out.println("Got a have message, index is " + chunkIndex);
 
         // Store the chunk before we forget.
         // We should only receive have messages for chunks the peer didn't have.
@@ -182,7 +186,10 @@ public class ClientThread extends Thread {
         this.remotePeer.setBit(chunkIndex,true);
         if ( !this.getLocalPeer().getChunky().hasChunk(chunkIndex) ) {
             // If we don't have this chunk, then we are interested!
+            System.out.println("interested");
             sendInterestedMessageToRemotePeer();
+        } else {
+            System.out.println(" not interested");
         }
     }
 
@@ -199,6 +206,17 @@ public class ClientThread extends Thread {
 
             // Send BITFIELD
             userOutput.println(message.getFull());
+
+
+            // For testing, send a have message!
+            String payload2 = "0002";
+            int messageLength2 = payload2.getBytes(StandardCharsets.ISO_8859_1).length;
+            System.out.println("Sending message " + messageLength2);
+            message.update(messageLength2, message.HAVE, payload2);
+            System.out.println("Sending message value" + message.getFull());
+
+            // Send
+            userOutput.println(message.getFull());
         }
         else {
             throw new IllegalArgumentException("Received Multiple Handshakes");
@@ -206,6 +224,7 @@ public class ClientThread extends Thread {
     }
 
     private void sendInterestedMessageToRemotePeer() {
+        System.out.println("Sending an interested message!");
         message.update(0, Message.INTERESTED,"");
         userOutput.println(message.getFull());
     }

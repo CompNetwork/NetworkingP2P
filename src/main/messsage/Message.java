@@ -116,4 +116,23 @@ public class Message  {
         m3 = payload;
 
     }
+
+    public static int BytesRemainingInMessageFromHeader(byte[] header) {
+        if (header.length != 5) {
+            throw new IllegalArgumentException("Error! A header is the first 5 bytes of a message. Mainly, the 5th byte tells us the type, and the first 4 the size!");
+        }
+        // This is a handshake message!
+        // Message length can be anything.
+        // But the 5th byte must be the I in P@PFILESHARINGPROJ, so
+        // WE can consider a handshake message to have a type value of 'I', or 73
+        if (header[4] == 'I') {
+            // This is a handshake message
+            int remainingLength = 32 - 5;
+            return remainingLength;
+        } else {
+            // This is a "actual" message!
+            int remainingLength = ByteArrayUtilities.recombine4BytesIntoInts(header[0], header[1], header[2], header[3]);
+            return remainingLength;
+        }
+    }
 }

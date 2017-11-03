@@ -42,23 +42,12 @@ public class ClientThread extends Thread {
         try {
             while (true) {
                 byte[] header = new byte[5];
+                // Read the header of the message, we must find this out before the body to know how much more to read
                 userInput.readFully(header);
-                byte[] body = null;
-                // This is a handshake message!
-                // Message length can be anything.
-                // But the 5th byte must be the I in P@PFILESHARINGPROJ, so
-                // WE can consider a handshake message to have a type value of 'I', or 73
-                if (header[4] == 'I') {
-                    // This is a handshake message
-                    int remainingLength = 32 - 5;
-                    body = new byte[remainingLength];
-                    userInput.read(body);
-                } else {
-                    // This is a "actual" message!
-                    int remainingLength = ByteArrayUtilities.recombine4BytesIntoInts(header[0], header[1], header[2], header[3]);
-                    body = new byte[remainingLength];
-                    userInput.read(body);
-                }
+                int bytesInBody = Message.BytesRemainingInMessageFromHeader(header);
+                byte[] body = new byte[bytesInBody];
+                // Now that we know how much is in the body, read the body
+                userInput.readFully(body);
                 byte[] fullMessage = ByteArrayUtilities.combineTwoByteArrays(header, body);
                 message.update(fullMessage);
                 handle(message);

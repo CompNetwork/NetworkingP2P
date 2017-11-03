@@ -67,7 +67,7 @@ public class Message  {
     public void update(byte[] rawData) {
 
         // Sets message value for handshaking
-        if (rawData[4] == 'I' ) {
+        if (isMessageHandShake(rawData)) {
             setAsHandshakeMessage(Arrays.copyOfRange(rawData,28,32));
         }
         // Sets message values for actual message
@@ -117,6 +117,12 @@ public class Message  {
 
     }
 
+    // Determines if the message given in is a handshake.
+    // Byte array passed in should include first 5 bytes of message.
+    private static boolean isMessageHandShake(byte[] message) {
+        return message[4] == 'I';
+    }
+
     public static int BytesRemainingInMessageFromHeader(byte[] header) {
         if (header.length != 5) {
             throw new IllegalArgumentException("Error! A header is the first 5 bytes of a message. Mainly, the 5th byte tells us the type, and the first 4 the size!");
@@ -125,7 +131,7 @@ public class Message  {
         // Message length can be anything.
         // But the 5th byte must be the I in P@PFILESHARINGPROJ, so
         // WE can consider a handshake message to have a type value of 'I', or 73
-        if (header[4] == 'I') {
+        if (isMessageHandShake(header)) {
             // This is a handshake message
             int remainingLength = 32 - 5;
             return remainingLength;

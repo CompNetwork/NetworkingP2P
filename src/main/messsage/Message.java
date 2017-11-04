@@ -4,6 +4,7 @@ package main.messsage;
 
 import main.file.ChunkifiedFileUtilities;
 import main.file.FileChunk;
+import main.file.FileChunkImpl;
 
 import java.awt.*;
 import java.nio.charset.Charset;
@@ -136,16 +137,46 @@ public class Message  {
         return mType;
     }
 
-    public byte[] getM3() {
+    private byte[] getM3() {
         return m3;
     }
 
-    public String getPeerId() {
+    public String getPeerIdPayload() {
         if (mType == MessageTypeConstants.HANDSHAKE ) {
             return new String(m3,StandardCharsets.ISO_8859_1);
         } else {
             throw new IllegalStateException("Error, asked for an peer id, but this is not a handshake message!");
         }
+    }
+
+
+    // If this is a have,or request message, return the index in the payload.
+    // throws an illegal state exception otherwise.
+    public int getIndexPayload() {
+        if ( this.getmType() == MessageTypeConstants.HAVE || this.getmType() == MessageTypeConstants.REQUEST ) {
+            return ByteArrayUtilities.recombine4ByteArrayIntoInt(this.getM3());
+        }
+        throw new IllegalStateException("Error, trying to get an integer payload from a message with no integer payload!");
+    }
+
+    // If this is a bitfield message, return the bitfield in the payload.
+    // Requires the length of the expected bitfield to trim the result.
+    // throws an illegal state exception otherwise.
+    public boolean[] getBitFieldPayload(int length) {
+        if ( this.getmType() == MessageTypeConstants.BITFIELD ) {
+            return ChunkifiedFileUtilities.getBitSetFromByteSet(this.getM3(),length);
+        }
+        throw new IllegalStateException("Error, trying to get an bitfield payload from non bitfield message!");
+    }
+
+    // If this is a piece message, return the FileChunk in the payload.
+    // throws an illegal state exception otherwise.
+    public FileChunk getFileChunkPayload() {
+        if ( this.getmType() == MessageTypeConstants.PIECE ) {
+            return new FileChunkImpl(this.getM3());
+        }
+        throw new IllegalStateException("Error, trying to get an FileChunk payload from non piece message!");
+
     }
 
     private void update(byte type, int payload) {
@@ -170,7 +201,7 @@ public class Message  {
     // Determines if the message given in is a handshake.
     // Byte array passed in should include first 5 bytes of message.
     private static boolean isMessageHandShake(byte[] message) {
-        return message[4] == 'I';
+        return message[4] == MessageTypeConstants.HANDSHAKE;
     }
 
     public static int BytesRemainingInMessageFromHeader(byte[] header) {

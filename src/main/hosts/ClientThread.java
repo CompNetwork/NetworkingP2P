@@ -1,13 +1,11 @@
 package main.hosts;
 
-import main.file.ChunkifiedFileUtilities;
 import main.messsage.ByteArrayUtilities;
 import main.messsage.Message;
 import main.messsage.MessageTypeConstants;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 
@@ -134,7 +132,7 @@ public class ClientThread extends Thread {
     }
 
     private void completeHandShake(Message message) throws IOException {
-        String peerID = message.getPeerId();
+        String peerID = message.getPeerIdPayload();
         this.remotePeer.setPeerId(peerID);
         sendBitField(peerID);
     }
@@ -168,8 +166,7 @@ public class ClientThread extends Thread {
 
     // Actual Message #4 incoming
     private void handleHave(Message message) throws IOException {
-        // TODO: Mbregg Use a pattern to fix this, this is ugly!
-        int chunkIndex = ByteArrayUtilities.recombine4ByteArrayIntoInt(message.getM3());
+        int chunkIndex = message.getIndexPayload();
         System.out.println("Obtained index # " + chunkIndex);
 
         // Store the chunk before we forget.
@@ -209,7 +206,7 @@ public class ClientThread extends Thread {
 
     // Actual Message #5 incoming
     private void handleBitField(Message message) {
-        System.out.println("Received a bitfield! " + Arrays.toString(message.getM3()));
+        System.out.println("Received a bitfield! " + Arrays.toString(message.getBitFieldPayload(localPeer.getChunky().getChunkCount())));
         // Evaluate whether interested or not
     }
 

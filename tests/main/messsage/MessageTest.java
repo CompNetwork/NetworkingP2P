@@ -32,4 +32,16 @@ public class MessageTest {
         Assert.assertEquals("1234",message.getPeerId());
     }
 
+    @Test
+    public void BytesRemainingInMessageFromHeader_HandShakeMessage_Get27() {
+        byte[] header = {0x00, 0x00, 0x00, 0x00, 'I'};
+        Assert.assertEquals(27,Message.BytesRemainingInMessageFromHeader(header));
+    }
+
+    @Test
+    public void BytesRemainingInMessageFromHeader_HaveMessage_GetPayloadLength() {
+        byte[] header = {0x00, 0x00, 0x12, 0x34, MessageTypeConstants.HAVE};
+        Assert.assertEquals(0x00001234,Message.BytesRemainingInMessageFromHeader(header));
+    }
+
 }

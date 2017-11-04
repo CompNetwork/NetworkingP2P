@@ -3,6 +3,8 @@ package main.messsage;
 // 1 byte field that goes in messages to determine the type.
 // Using unsigned representation for now.
 public class MessageTypeConstants {
+    // DO NOT EVER hard code these literals in the code. ALWAYS refer to them by MessageTypeConstants.FIELD.
+    // These might change in future versions!
     public static final byte HANDSHAKE = 0x0F;
     public static final byte CHOKE = 0x00;
     public static final byte UNCHOKE = 0x01;

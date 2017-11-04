@@ -2,6 +2,10 @@ package main.messsage;
 
 //import java.io.Serializable;
 
+import main.file.ChunkifiedFileUtilities;
+import main.file.FileChunk;
+
+import java.awt.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -42,11 +46,51 @@ public class Message  {
 
     */
     //private static final long serialVersionID = 132437293456465438l;
-    byte mType;
-    byte[] m1;  //first part of message
-    byte[] m2;  //second part of message
-    byte[] m3;  //third part of message
+    private byte mType;
+    private byte[] m1;  //first part of message
+    private byte[] m2;  //second part of message
+    private byte[] m3;  //third part of message
 
+
+    // Setters. Provide a safe way to set this message
+    // to each of the types.
+    // Provide the field, and let the message handle encapsulating it!
+
+    // First all the payloadless messages.
+    public void mutateIntoChoke() {
+        this.update(MessageTypeConstants.CHOKE,null);
+    }
+
+    public void mutateIntoUnChoke() {
+        this.update(MessageTypeConstants.UNCHOKE,null);
+    }
+
+    public void mutateIntoInterested() {
+        this.update(MessageTypeConstants.INTERESTED,null);
+    }
+
+    public void mutateIntoUnInterested() {
+        this.update(MessageTypeConstants.UNINTERESTED,null);
+    }
+    public void mutateIntoHandshake(String peerID) {
+        this.setAsHandshakeMessage(peerID.getBytes(StandardCharsets.ISO_8859_1));
+    }
+    // Now the slightly more interesting ones with an integer payload!
+    public void mutateIntoHave(int payload) {
+        this.update(MessageTypeConstants.HAVE,payload);
+    }
+
+    public void mutateIntoRequest(int payload) {
+        this.update(MessageTypeConstants.REQUEST,payload);
+    }
+    // Now for the two actually complicated causes, the bitfield, and the piece!
+    public void mutateIntoBitField(boolean[] bitfield) {
+        byte[] byteField = ChunkifiedFileUtilities.getByteSetFromBitSet(bitfield);
+        this.update(MessageTypeConstants.BITFIELD,byteField);
+    }
+    public void mutateIntoPiece(FileChunk piece) {
+        this.update(MessageTypeConstants.PIECE,piece.asByteArray());
+    }
 
     public static Message createHandShakeMessageFromPeerId(String peerID) {
        Message message = new Message();
@@ -61,6 +105,7 @@ public class Message  {
         m3 = peerID;
         mType = MessageTypeConstants.HANDSHAKE;
     }
+
 
 
     // Updates the state of the Message object depending on the rawData
@@ -103,7 +148,12 @@ public class Message  {
         }
     }
 
-    public void update(byte type, byte[] payload) {
+    private void update(byte type, int payload) {
+        byte[] splitPayload = ByteArrayUtilities.SplitIntInto4ByteArray(payload);
+        this.update(type,splitPayload);
+    }
+
+    private void update(byte type, byte[] payload) {
         if (payload == null ) {
             payload = new byte[0];
             // Just for simpler impl.

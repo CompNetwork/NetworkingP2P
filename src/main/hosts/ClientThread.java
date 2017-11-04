@@ -8,6 +8,7 @@ import main.messsage.MessageTypeConstants;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 
 public class ClientThread extends Thread {
@@ -188,9 +189,8 @@ public class ClientThread extends Thread {
             this.setFinHandshake(true);
             this.remotePeer.setPeerId(peerID);
             this.localPeer.getLogger().TCPConnectionLog(this.localPeer.getPeerID(), this.remotePeer.getPeerID());
-
-            byte[] payload = ChunkifiedFileUtilities.getByteSetFromBitSet(localPeer.getChunky().AvailableChunks());
-            message.update(MessageTypeConstants.BITFIELD, payload);
+            System.out.println("Sending bitfield!" + Arrays.toString(localPeer.getChunky().AvailableChunks()));
+            message.mutateIntoBitField(localPeer.getChunky().AvailableChunks());
 
             // Send BITFIELD
             userOutput.write(message.getFull());
@@ -202,14 +202,14 @@ public class ClientThread extends Thread {
     }
 
     private void sendInterestedMessageToRemotePeer() throws IOException {
-        message.update(MessageTypeConstants.INTERESTED,null);
+        message.mutateIntoInterested();
         userOutput.write(message.getFull());
         userOutput.flush();
     }
 
     // Actual Message #5 incoming
     private void handleBitField(Message message) {
-        System.out.println(message.getM3());
+        System.out.println("Received a bitfield! " + Arrays.toString(message.getM3()));
         // Evaluate whether interested or not
     }
 

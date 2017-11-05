@@ -239,6 +239,13 @@ public class ClientThread extends Thread {
 
     // Actual Message #6 outgoing
     private void sendRequest() {
+
+        /*TODO: if Unchoke */
+        //if(!RemotePeer.isChoke){}
+//        ChunkifiedFileUtilities.getIndexesOfBitsetAthatBitsetBDoesNotHave();
+//        localPeer.getChunky().;
+
+
         //        String payload = message.getM3();
         //        byte[] bSet = ChunkifiedFileUtilities.getByteSetFromString(payload);
         //        this.peer.getChunky().
@@ -250,11 +257,12 @@ public class ClientThread extends Thread {
     // Actual Message #6 incoming
     private void handleRequest(Message message) throws IOException {
 
-        // Extracts piece from sent message
-        int pieceIndex = message.getIndexPayload();
-        // Updates message.type and payload
-        message.mutateIntoPiece(this.localPeer.getChunky().getChunk(pieceIndex),pieceIndex);
-        sendMessage(message);
+        /*TODO: if Unchoke*/
+            // Extracts piece from sent message
+            int pieceIndex = message.getIndexPayload();
+            // Updates message.type and payload
+            message.mutateIntoPiece(this.localPeer.getChunky().getChunk(pieceIndex), pieceIndex);
+            sendMessage(message);
     }
 
     // Actual Message #7 outgoing

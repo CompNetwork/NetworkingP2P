@@ -232,4 +232,8 @@ public class Peer {
             }
         }
     }
+
+    public void informOfReceivedPiece(String peerID, int sizeOfPiece) {
+        // TODO: Andy
+    }
 }

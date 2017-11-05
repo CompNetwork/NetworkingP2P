@@ -127,11 +127,19 @@ public class Message  {
             m1 = Arrays.copyOfRange(rawData,0,4);      //size
             m2 = Arrays.copyOfRange(rawData,4,5);      //message type
             mType = rawData[4];
-            int size = rawData.length;
-            if(size-5  > 0)
-                m3 = Arrays.copyOfRange(rawData,5,size);
+            int rawSize = rawData.length;
+            if(rawSize-5  > 0)
+                m3 = Arrays.copyOfRange(rawData,5,rawSize);
             else
                 m3 = new byte[0];
+
+            {
+                int givenSize = ByteArrayUtilities.recombine4ByteArrayIntoInt(m1);
+                if (rawSize - 4 != givenSize) {
+                    System.err.println("Error, specified message size is not equal to payload!");
+                    throw new IllegalArgumentException("EError, specified message size is not equal to payload! Length:" + rawSize + " GivenLength:" + givenSize);
+                }
+            }
         }
     }
 
@@ -201,12 +209,12 @@ public class Message  {
             // Just for simpler impl.
             // Not really worrying about perf atm.
         }
-        this.m1 = ByteArrayUtilities.SplitIntInto4ByteArray(payload.length);
+        // Payload.length, + 1 for the type field.
+        this.m1 = ByteArrayUtilities.SplitIntInto4ByteArray(payload.length+1);
         this.m2 = new byte[1];
         m2[0] = type;
         mType = type;
         m3 = payload;
-
     }
 
     // Determines if the message given in is a handshake.
@@ -230,7 +238,10 @@ public class Message  {
         } else {
             // This is a "actual" message!
             int remainingLength = ByteArrayUtilities.recombine4BytesIntoInts(header[0], header[1], header[2], header[3]);
-            return remainingLength;
+            // Why is this minus 1?
+            // Because remaining length is the message size which is | type + payload |.
+            // Since we already read in the payload, subtract 1 to account for that!
+            return remainingLength-1;
         }
     }
 }

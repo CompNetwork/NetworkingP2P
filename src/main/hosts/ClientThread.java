@@ -1,6 +1,5 @@
 package main.hosts;
 
-import main.file.ChunkifiedFile;
 import main.file.ChunkifiedFileUtilities;
 import main.file.FileChunk;
 import main.messsage.ByteArrayUtilities;
@@ -167,7 +166,7 @@ public class ClientThread extends Thread {
 
     }
 
-    private void sendMessage(Message message) throws IOException {
+    public void sendMessage(Message message) throws IOException {
             output.write(message.getFull());
             output.flush();
     }
@@ -230,7 +229,7 @@ public class ClientThread extends Thread {
         // Evaluate whether interested or not
         // If the remote peer has a chunk we do not, we are interested!
         // Otherwise, inform the peer we are not interested!
-        if (ChunkifiedFileUtilities.doesAHaveChunksBDoesNot(remotePeer.getBitset(),localPeer.getChunky().AvailableChunks())) {
+        if (this.isRemotePeerInteresting()) {
             this.sendInterested();
         } else {
             this.sendNotInterested();
@@ -257,14 +256,22 @@ public class ClientThread extends Thread {
 
     }
 
-    private void handlePiece(Message message) {
+    private void handlePiece(Message message) throws IOException {
         int pieceIndex = message.getIndexPayload();
         FileChunk pieceGot = message.getFileChunkPayload();
         this.getLocalPeer().getChunky().setChunk(pieceIndex,pieceGot);
 
+        // Send a have message to all peers.
+        this.getLocalPeer().sendHaveMessageToAllRemotePeers(pieceIndex);
+
         // TODO: Have all peers redetermine if interested in current peer
-        // TODO: Send have messages to all peers.
+        this.getLocalPeer().haveSomePeersBecomeUnInteresting();
     }
 
     public Peer getLocalPeer() { return localPeer; }
+
+    public boolean isRemotePeerInteresting() {
+        // If remotePeer has a bit we do not, it is interesting.
+        return ChunkifiedFileUtilities.doesAHaveChunksBDoesNot(remotePeer.getBitset(),localPeer.getChunky().AvailableChunks());
+    }
 }

@@ -249,14 +249,23 @@ public class ClientThread extends Thread {
     }
 
     // Actual Message #6 incoming
-    private void handleRequest(Message message) {
+    private void handleRequest(Message message) throws IOException {
 
-        // randomly pick an index with an empty bit value
-
-        //        if(this.peer.getChunky().hasChunk(0));
-
+        // Extracts piece from sent message
+        int pieceIndex = message.getIndexPayload();
+        // Updates message.type and payload
+        message.mutateIntoPiece(this.localPeer.getChunky().getChunk(pieceIndex));
+        sendMessage(message);
     }
 
+    // Actual Message #7 outgoing
+    private void sendPiece() {
+        /*
+        * Page 5: On receiving peer A’s ‘request’ message, peer B sends a ‘piece’ message that contains the actual piece.
+        */
+    }
+
+    // Actual Message #7 outgoing
     private void handlePiece(Message message) {
         int pieceIndex = message.getIndexPayload();
         FileChunk pieceGot = message.getFileChunkPayload();

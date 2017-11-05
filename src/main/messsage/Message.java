@@ -116,6 +116,7 @@ public class Message  {
 
     // Updates the state of the Message object depending on the rawData
     public void update(byte[] rawData) {
+        // TODO: Bregg Add validating for all types of messages. EX: Validate a have message has an index field.
 
         // Sets message value for handshaking
         if (isMessageHandShake(rawData)) {
@@ -204,6 +205,7 @@ public class Message  {
     }
 
     private void update(byte type, byte[] payload) {
+        // TODO: Bregg Add validating for all types of messages. EX: Validate a have message has an index field.
         if (payload == null ) {
             payload = new byte[0];
             // Just for simpler impl.

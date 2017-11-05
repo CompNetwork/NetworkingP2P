@@ -1,11 +1,12 @@
 package main.hosts;
 
-import main.file.ChunkifiedFileUtilities;
+import main.messsage.ByteArrayUtilities;
 import main.messsage.Message;
+import main.messsage.MessageTypeConstants;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 
 public class ClientThread extends Thread {
@@ -16,13 +17,12 @@ public class ClientThread extends Thread {
     RemotePeer remotePeer = null;
     Socket socket = null;
     Message message;
-    BufferedReader in = null;
-    BufferedReader userInput = null;
-    PrintWriter out =  null;
+    DataInputStream input = null;
+    OutputStream output =  null;
 
     private boolean finHandshake;
 
-    public ClientThread(Socket socket, Peer localPeer, RemotePeer remotePeer) {
+    public ClientThread(Socket socket, Peer localPeer, RemotePeer remotePeer) throws IOException {
         this.socket = socket;
         this.localPeer = localPeer;
         this.remotePeer = remotePeer;
@@ -30,30 +30,25 @@ public class ClientThread extends Thread {
         this.initHandshake();
     }
 
+
     public void run() {
         try {
-            while(true) {
 
-                if(!in.ready() && !userInput.ready()) {
-                    Thread.sleep(500);
-                }
-
-                if(userInput.ready()) {
-                    String rawData = userInput.readLine();
-                    message.update(rawData);
-                    handle(message);
-                    out.println(rawData);
-                }
-
-                if(in.ready()) {
-                    String rawData = this.in.readLine();
-                    message.update(rawData);
-                    handle(message);
-                }
+            while (true) {
+                byte[] header = new byte[5];
+                // Read the header of the message, we must find this out before the body to know how much more to read
+                input.readFully(header);
+                int bytesInBody = Message.BytesRemainingInMessageFromHeader(header);
+                byte[] body = new byte[bytesInBody];
+                // Now that we know how much is in the body, read the body
+                input.readFully(body);
+                byte[] fullMessage = ByteArrayUtilities.combineTwoByteArrays(header, body);
+                message.update(fullMessage);
+                handle(message);
             }
+        } catch (EOFException e) {
+            System.out.println("EOF hit, socket closed. Hopefully this is because the program is terminating.");
         } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
             e.printStackTrace();
         } finally {
             System.out.println("Closing socket" + this.socket + " to Peer" + localPeer.getPeerID());
@@ -65,39 +60,39 @@ public class ClientThread extends Thread {
         }
     }
 
-    public void handle(Message message) {
+    public void handle(Message message) throws IOException {
 
-        int type = message.getmType();
+        byte type = message.getmType();
 
         switch ( type ) {
-            case -1 :
+            case MessageTypeConstants.HANDSHAKE :
                 completeHandShake(message);
                 System.out.println("Handshake");
                 break;
-            case 0 :
+            case MessageTypeConstants.CHOKE :
                 System.out.println("Choke");
                 break;
-            case 1 :
+            case MessageTypeConstants.UNCHOKE:
                 System.out.println("Unchoke");
                 break;
-            case 2 :
+            case MessageTypeConstants.INTERESTED:
                 System.out.println("Interested");
                 break;
-            case 3 :
+            case MessageTypeConstants.UNINTERESTED:
                 System.out.println("Not Interested");
                 break;
-            case 4 :
+            case MessageTypeConstants.HAVE:
                 System.out.println("Have");
                 handleHave(message);
                 break;
-            case 5 :
+            case MessageTypeConstants.BITFIELD:
                 handleBitField(message);
                 System.out.println("Bitfield");
                 break;
-            case 6 :
+            case MessageTypeConstants.REQUEST:
                 System.out.println("Request");
                 break;
-            case 7 :
+            case MessageTypeConstants.PIECE:
                 System.out.println("Piece");
                 break;
             default:
@@ -115,9 +110,8 @@ public class ClientThread extends Thread {
 
     private void setupSocketIO() {
         try {
-            this.userInput = new BufferedReader(new InputStreamReader(System.in));
-            this.in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
-            this.out = new PrintWriter(this.socket.getOutputStream(), true);
+            this.input = new DataInputStream(this.socket.getInputStream());
+            this.output = this.socket.getOutputStream();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -129,14 +123,15 @@ public class ClientThread extends Thread {
 
     /*************** Protocol Methods ****************/
     
-    private void initHandshake() {
+    private void initHandshake() throws IOException {
         setFinHandshake(false);
-        message = new Message(this.localPeer.getPeerID());
-        out.println(message.getFull());
+        message = Message.createHandShakeMessageFromPeerId(this.localPeer.getPeerID());
+        output.write(message.getFull());
+        output.flush();
     }
 
-    private void completeHandShake(Message message) {
-        String peerID = message.getM3();
+    private void completeHandShake(Message message) throws IOException {
+        String peerID = message.getPeerIdPayload();
         this.remotePeer.setPeerId(peerID);
         sendBitField(peerID);
     }
@@ -169,11 +164,9 @@ public class ClientThread extends Thread {
     private void sendHave(){}
 
     // Actual Message #4 incoming
-    private void handleHave(Message message) {
-        String indexHave = message.getM3();
-        // TODO: Mbregg Use a pattern to fix this, this is ugly!
-        // Also test that this works!
-        int chunkIndex = Integer.parseInt(indexHave);
+    private void handleHave(Message message) throws IOException {
+        int chunkIndex = message.getIndexPayload();
+        System.out.println("Obtained index # " + chunkIndex);
 
         // Store the chunk before we forget.
         // We should only receive have messages for chunks the peer didn't have.
@@ -181,37 +174,38 @@ public class ClientThread extends Thread {
         this.remotePeer.setBit(chunkIndex,true);
         if ( !this.getLocalPeer().getChunky().hasChunk(chunkIndex) ) {
             // If we don't have this chunk, then we are interested!
+            System.out.println("Sending interested message, as we don't have!");
             sendInterestedMessageToRemotePeer();
         }
     }
 
     // Actual Message #5 outgoing
-    private void sendBitField(String peerID) {
+    private void sendBitField(String peerID) throws IOException {
         if(!this.getFinHandshake()) {
             this.setFinHandshake(true);
             this.remotePeer.setPeerId(peerID);
             this.localPeer.getLogger().TCPConnectionLog(this.localPeer.getPeerID(), this.remotePeer.getPeerID());
-
-            String payload = ChunkifiedFileUtilities.getStringFromBitSet(localPeer.getChunky().AvailableChunks());
-            int messageLength = payload.getBytes(StandardCharsets.ISO_8859_1).length;
-            message.update(messageLength, message.BITFIELD, payload);
+            System.out.println("Sending bitfield!" + Arrays.toString(localPeer.getChunky().AvailableChunks()));
+            message.mutateIntoBitField(localPeer.getChunky().AvailableChunks());
 
             // Send BITFIELD
-            out.println(message.getFull());
+            output.write(message.getFull());
+            output.flush();
         }
         else {
             throw new IllegalArgumentException("Received Multiple Handshakes");
         }
     }
 
-    private void sendInterestedMessageToRemotePeer() {
-        message.update(0, Message.INTERESTED,"");
-        out.println(message.getFull());
+    private void sendInterestedMessageToRemotePeer() throws IOException {
+        message.mutateIntoInterested();
+        output.write(message.getFull());
+        output.flush();
     }
 
     // Actual Message #5 incoming
     private void handleBitField(Message message) {
-        System.out.println(message.getM3());
+        System.out.println("Received a bitfield! " + Arrays.toString(message.getBitFieldPayload(localPeer.getChunky().getChunkCount())));
         // Evaluate whether interested or not
     }
 

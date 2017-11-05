@@ -168,8 +168,8 @@ public class ClientThread extends Thread {
     }
 
     private void sendMessage(Message message) throws IOException {
-            userOutput.write(message.getFull());
-            userOutput.flush();
+            output.write(message.getFull());
+            output.flush();
     }
 
     // Actual Message #3 incoming

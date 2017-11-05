@@ -10,6 +10,7 @@ import main.messsage.MessageTypeConstants;
 import java.io.*;
 import java.net.Socket;
 import java.util.Arrays;
+import java.util.Random;
 
 
 public class ClientThread extends Thread {
@@ -256,22 +257,17 @@ public class ClientThread extends Thread {
 
     // Actual Message #6 outgoing
     // Mutates the parameter given
-    private void sendRequest(Message m,int payload) throws IOException {
-        m.mutateIntoRequest(payload);
-        this.sendMessage(m);
-
-                /*TODO: if Unchoke */
-            //if(!RemotePeer.isChoke){}
-//        ChunkifiedFileUtilities.getIndexesOfBitsetAthatBitsetBDoesNotHave();
-//        localPeer.getChunky().;
+    private void sendRequest(Message m, int payloadNotUsed) throws IOException {
 
 
-            //        String payload = message.getM3();
-            //        byte[] bSet = ChunkifiedFileUtilities.getByteSetFromString(payload);
-            //        this.peer.getChunky().
-            //        String payload = "";
-            //        message.update(1,message.REQUEST, payload);
-            //        userOutput.println(message.getFull());
+        /*TODO: if Unchoke */
+        //if(!RemotePeer.isChoke){
+            int [] missingChunksIndices = ChunkifiedFileUtilities.getIndexesOfBitsetAthatBitsetBDoesNotHave(this.remotePeer.getBitset(), this.localPeer.getChunky().AvailableChunks());
+            int payload = new Random().nextInt(missingChunksIndices.length);
+            m.mutateIntoRequest(payload);
+            this.sendMessage(m);
+        // }
+
     }
 
     // Actual Message #6 incoming

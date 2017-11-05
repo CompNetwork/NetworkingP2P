@@ -73,6 +73,7 @@ public class Message  {
     public void mutateIntoUnInterested() {
         this.update(MessageTypeConstants.UNINTERESTED,null);
     }
+
     public void mutateIntoHandshake(String peerID) {
         this.setAsHandshakeMessage(peerID.getBytes(StandardCharsets.ISO_8859_1));
     }
@@ -84,6 +85,7 @@ public class Message  {
     public void mutateIntoRequest(int payload) {
         this.update(MessageTypeConstants.REQUEST,payload);
     }
+
     // Now for the two actually complicated causes, the bitfield, and the piece!
     public void mutateIntoBitField(boolean[] bitfield) {
         byte[] byteField = ChunkifiedFileUtilities.getByteSetFromBitSet(bitfield);
@@ -111,8 +113,6 @@ public class Message  {
         m3 = peerID;
         mType = MessageTypeConstants.HANDSHAKE;
     }
-
-
 
     // Updates the state of the Message object depending on the rawData
     public void update(byte[] rawData) {
@@ -142,6 +142,27 @@ public class Message  {
                 }
             }
         }
+    }
+
+    // FIXME: Naming for this signature doesn't seem to be intuitive. This seems to be a helper function for update
+    private void update(byte type, int payload) {
+        byte[] splitPayload = ByteArrayUtilities.SplitIntInto4ByteArray(payload);
+        this.update(type,splitPayload);
+    }
+
+    private void update(byte type, byte[] payload) {
+        // TODO: Bregg Add validating for all types of messages. EX: Validate a have message has an index field.
+        if (payload == null ) {
+            payload = new byte[0];
+            // Just for simpler impl.
+            // Not really worrying about perf atm.
+        }
+        // Payload.length, + 1 for the type field.
+        this.m1 = ByteArrayUtilities.SplitIntInto4ByteArray(payload.length+1);
+        this.m2 = new byte[1];
+        m2[0] = type;
+        mType = type;
+        m3 = payload;
     }
 
 
@@ -197,26 +218,6 @@ public class Message  {
         }
         throw new IllegalStateException("Error, trying to get an FileChunk payload from non piece message!");
 
-    }
-
-    private void update(byte type, int payload) {
-        byte[] splitPayload = ByteArrayUtilities.SplitIntInto4ByteArray(payload);
-        this.update(type,splitPayload);
-    }
-
-    private void update(byte type, byte[] payload) {
-        // TODO: Bregg Add validating for all types of messages. EX: Validate a have message has an index field.
-        if (payload == null ) {
-            payload = new byte[0];
-            // Just for simpler impl.
-            // Not really worrying about perf atm.
-        }
-        // Payload.length, + 1 for the type field.
-        this.m1 = ByteArrayUtilities.SplitIntInto4ByteArray(payload.length+1);
-        this.m2 = new byte[1];
-        m2[0] = type;
-        mType = type;
-        m3 = payload;
     }
 
     // Determines if the message given in is a handshake.

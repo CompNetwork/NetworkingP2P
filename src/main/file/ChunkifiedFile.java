@@ -82,25 +82,27 @@ public class ChunkifiedFile {
 
             return new DefaultValueChunk(Math.min(fileSize-i*chunkSize, chunkSize),MAGIC_CONSTANT);
         }
-        RandomAccessFile randomAccessFile = null;
-        try {
-            randomAccessFile = new RandomAccessFile(file,"r");
-            randomAccessFile.seek(chunkSize*i);
-            byte[] read_in = new byte[chunkSize];
-            int actually_read_in = randomAccessFile.read(read_in);
-            byte[] read_in_truncated = new byte[actually_read_in];
-            System.arraycopy(read_in,0,read_in_truncated,0,actually_read_in);
-            return new FileChunkImpl(read_in_truncated);
-        } catch(IOException except) {
-            System.err.println("Returning null as a error happened, was the file deleted while the program was running?");
-            return null;
-        } finally {
-            if ( randomAccessFile != null ) {
-                try {
-                    randomAccessFile.close();
-                } catch (IOException e) {
-                    System.out.println("Unable to close file!");
-                    e.printStackTrace();
+        synchronized (this) {
+            RandomAccessFile randomAccessFile = null;
+            try {
+                randomAccessFile = new RandomAccessFile(file, "r");
+                randomAccessFile.seek(chunkSize * i);
+                byte[] read_in = new byte[chunkSize];
+                int actually_read_in = randomAccessFile.read(read_in);
+                byte[] read_in_truncated = new byte[actually_read_in];
+                System.arraycopy(read_in, 0, read_in_truncated, 0, actually_read_in);
+                return new FileChunkImpl(read_in_truncated);
+            } catch (IOException except) {
+                System.err.println("Returning null as a error happened, was the file deleted while the program was running?");
+                return null;
+            } finally {
+                if (randomAccessFile != null) {
+                    try {
+                        randomAccessFile.close();
+                    } catch (IOException e) {
+                        System.out.println("Unable to close file!");
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -124,15 +126,16 @@ public class ChunkifiedFile {
             }
         }
 
+        synchronized (this) {
+            try {
+                RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
+                randomAccessFile.seek(chunkSize * i);
+                randomAccessFile.write(data.asByteArray());
+                bitset[i] = true; // Set this chunk to have been written!
 
-        try {
-            RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
-            randomAccessFile.seek(chunkSize*i);
-            randomAccessFile.write(data.asByteArray());
-            bitset[i] = true; // Set this chunk to have been written!
-
-        } catch ( IOException except ) {
-            System.err.println("Returning null as a error happened, was the file deleted while the program was running?");
+            } catch (IOException except) {
+                System.err.println("Returning null as a error happened, was the file deleted while the program was running?");
+            }
         }
     }
 

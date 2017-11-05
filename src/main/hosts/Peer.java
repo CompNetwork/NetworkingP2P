@@ -87,7 +87,7 @@ public class Peer {
                 Socket s = this.sSocket.accept();
                 System.out.println("Peer " + this.peerID + " added new connection: " + s.toString() + " to connection list");
                 RemotePeer remotePeer = new RemotePeer(RemotePeer.NO_PEER_ID_YET,chunky.getChunkCount());
-                ClientThread ct = new ClientThread(s, this,remotePeer);
+                ClientThread ct = new ClientThread(s, this, remotePeer);
                 ct.start();
                 this.connections.add(ct);
             }

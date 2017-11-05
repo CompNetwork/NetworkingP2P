@@ -20,16 +20,10 @@ public class ClientThread extends Thread {
     RemotePeer remotePeer = null;
     Socket socket = null;
     Message message;
-    DataInputStream userInput = null;
-    OutputStream userOutput =  null;
+    DataInputStream input = null;
+    OutputStream output =  null;
 
     private boolean finHandshake;
-    private void setFinHandshake(boolean finHandshake) {
-        this.finHandshake = finHandshake;
-    }
-    private boolean getFinHandshake() {
-        return finHandshake;
-    }
 
     public ClientThread(Socket socket, Peer localPeer, RemotePeer remotePeer) throws IOException {
         this.socket = socket;
@@ -42,14 +36,15 @@ public class ClientThread extends Thread {
 
     public void run() {
         try {
+
             while (true) {
                 byte[] header = new byte[5];
                 // Read the header of the message, we must find this out before the body to know how much more to read
-                userInput.readFully(header);
+                input.readFully(header);
                 int bytesInBody = Message.BytesRemainingInMessageFromHeader(header);
                 byte[] body = new byte[bytesInBody];
                 // Now that we know how much is in the body, read the body
-                userInput.readFully(body);
+                input.readFully(body);
                 byte[] fullMessage = ByteArrayUtilities.combineTwoByteArrays(header, body);
                 message.update(fullMessage);
                 handle(message);
@@ -119,12 +114,16 @@ public class ClientThread extends Thread {
 
     private void setupSocketIO() {
         try {
-            this.userInput = new DataInputStream(this.socket.getInputStream());
-            this.userOutput = this.socket.getOutputStream();
+            this.input = new DataInputStream(this.socket.getInputStream());
+            this.output = this.socket.getOutputStream();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
+    private void setFinHandshake(boolean finHandshake) { this.finHandshake = finHandshake; }
+
+    private boolean getFinHandshake() { return finHandshake; }
 
     /*************** Protocol Methods ****************/
     

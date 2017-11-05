@@ -223,7 +223,7 @@ public class Peer {
     // For each client thread (remote peer), determine if we are still interested in them.
     // If we are not, send a uninterested message.
     // We do not check if a peer is uninteresting before hand. If a peer was uninteresting before hand.
-    public void haveSomePeersBecomeUnInteresting() throws IOException {
+    public void sendUninterestedToAllUninterestingPeers() throws IOException {
         Message uninterested = new Message();
         uninterested.mutateIntoUnInterested();
         for (ClientThread thread : connections) {

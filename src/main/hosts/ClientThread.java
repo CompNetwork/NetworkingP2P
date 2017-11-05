@@ -273,8 +273,8 @@ public class ClientThread extends Thread {
         // Send a have message to all peers.
         this.getLocalPeer().sendHaveMessageToAllRemotePeers(pieceIndex);
 
-        // TODO: Have all peers redetermine if interested in current peer
-        this.getLocalPeer().haveSomePeersBecomeUnInteresting();
+        // Send uninterested message to all uninteresting peers
+        this.getLocalPeer().sendUninterestedToAllUninterestingPeers();
     }
 
     public Peer getLocalPeer() { return localPeer; }

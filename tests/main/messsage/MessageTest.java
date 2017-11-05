@@ -92,11 +92,14 @@ public class MessageTest {
     @Test
     public void mutateIntoPiece_MutatesIntoPiece_BecomesAPieceMessage() {
         Message message = new Message();
-        byte[] expected = {(byte)0xDE,(byte)0xED,(byte)0xBE,(byte)0xEF};
-        message.mutateIntoPiece(new FileChunkImpl(expected));
+        byte[] expectedFilePayload = {(byte)0xDE,(byte)0xED,(byte)0xBE,(byte)0xEF};
+        int expectedIndexPayload = 0x12345678;
+        message.mutateIntoPiece(new FileChunkImpl(expectedFilePayload), expectedIndexPayload);
         Assert.assertEquals(MessageTypeConstants.PIECE,message.getmType());
-        Assert.assertArrayEquals(expected,message.getFileChunkPayload().asByteArray());
-        byte[] expectedMessage = { 0x00,0x00,0x00,0x04, MessageTypeConstants.PIECE, (byte)0xDE,(byte)0xED,(byte)0xBE,(byte)0xEF};
+        Assert.assertEquals(expectedIndexPayload,message.getIndexPayload());
+        Assert.assertArrayEquals(expectedFilePayload,message.getFileChunkPayload().asByteArray());
+        // Size of message, type of message, index of piece, piece
+        byte[] expectedMessage = { 0x00,0x00,0x00,0x08, MessageTypeConstants.PIECE, 0x12, 0x34, 0x56, 0x78, (byte)0xDE,(byte)0xED,(byte)0xBE,(byte)0xEF};
         Assert.assertArrayEquals(expectedMessage,message.getFull());
     }
 

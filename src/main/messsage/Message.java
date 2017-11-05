@@ -89,8 +89,13 @@ public class Message  {
         byte[] byteField = ChunkifiedFileUtilities.getByteSetFromBitSet(bitfield);
         this.update(MessageTypeConstants.BITFIELD,byteField);
     }
-    public void mutateIntoPiece(FileChunk piece) {
-        this.update(MessageTypeConstants.PIECE,piece.asByteArray());
+    public void mutateIntoPiece(FileChunk piece, int pieceIndex) {
+        byte[] fileinBytes = piece.asByteArray();
+        byte[] fileChunkSize = ByteArrayUtilities.SplitIntInto4ByteArray(pieceIndex);
+        byte[] piecePayload = new byte[fileinBytes.length+fileChunkSize.length];
+        System.arraycopy(fileChunkSize,0,piecePayload,0,fileChunkSize.length);
+        System.arraycopy(fileinBytes,0,piecePayload,4,fileinBytes.length);
+        this.update(MessageTypeConstants.PIECE,piecePayload);
     }
 
     public static Message createHandShakeMessageFromPeerId(String peerID) {
@@ -156,6 +161,10 @@ public class Message  {
         if ( this.getmType() == MessageTypeConstants.HAVE || this.getmType() == MessageTypeConstants.REQUEST ) {
             return ByteArrayUtilities.recombine4ByteArrayIntoInt(this.getM3());
         }
+        if ( this.getmType() == MessageTypeConstants.PIECE ) {
+            return ByteArrayUtilities.recombine4ByteArrayIntoInt(Arrays.copyOfRange(this.getM3(),0,4));
+        }
+
         throw new IllegalStateException("Error, trying to get an integer payload from a message with no integer payload!");
     }
 
@@ -173,7 +182,9 @@ public class Message  {
     // throws an illegal state exception otherwise.
     public FileChunk getFileChunkPayload() {
         if ( this.getmType() == MessageTypeConstants.PIECE ) {
-            return new FileChunkImpl(this.getM3());
+            byte[] indexAndPayload = this.getM3();
+            return new FileChunkImpl(Arrays.copyOfRange(indexAndPayload,4,indexAndPayload.length));
+
         }
         throw new IllegalStateException("Error, trying to get an FileChunk payload from non piece message!");
 

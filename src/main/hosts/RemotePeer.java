@@ -33,4 +33,8 @@ public class RemotePeer {
     public void setPeerId(String peerID) {
         this.peerID = peerID;
     }
+
+    public boolean[] getBitset() {
+        return bitset;
+    }
 }

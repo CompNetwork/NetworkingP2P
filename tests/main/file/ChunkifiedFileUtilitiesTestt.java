@@ -25,6 +25,36 @@ public class ChunkifiedFileUtilitiesTestt {
     }
 
     @Test
+    public void doesAHaveChunksBDoesNot_HasAnExtraBit_ReturnsTrue() {
+        boolean[] bitsetA = { true, false, true };
+        boolean[] bitsetB = { false, false, true };
+        Assert.assertTrue(ChunkifiedFileUtilities.doesAHaveChunksBDoesNot(bitsetA,bitsetB));
+    }
+
+    @Test
+    public void doesAHaveChunksBDoesNot_NoExtraBits_ReturnsFalse() {
+        boolean[] bitsetA = { true, false, false};
+        boolean[] bitsetB = { true, true, false};
+        Assert.assertFalse(ChunkifiedFileUtilities.doesAHaveChunksBDoesNot(bitsetA,bitsetB));
+    }
+
+    @Test
+    public void getIndexesOfBitsetAthatBitsetBDoesNotHave_AHasSomeIndex_TheyAreRetrieved() {
+        boolean[] bitsetA = { true, false, true};
+        boolean[] bitsetB = { true, true, false};
+        int[] expected = {2};
+        Assert.assertArrayEquals(expected,ChunkifiedFileUtilities.getIndexesOfBitsetAthatBitsetBDoesNotHave(bitsetA,bitsetB));
+    }
+
+    @Test
+    public void getIndexesOfBitsetAthatBitsetBDoesNotHave_AHasNoIndexes_EmptyArray() {
+        boolean[] bitsetA = { true, false, false};
+        boolean[] bitsetB = { true, true, false};
+        int[] expected = {};
+        Assert.assertArrayEquals(expected,ChunkifiedFileUtilities.getIndexesOfBitsetAthatBitsetBDoesNotHave(bitsetA,bitsetB));
+    }
+
+    @Test
     public void getUnder1ByteSet() throws Exception {
         boolean[] bitset = getBitSetFromString("1011000");
         byte[] byteset = ChunkifiedFileUtilities.getByteSetFromBitSet(bitset);

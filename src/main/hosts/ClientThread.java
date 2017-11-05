@@ -1,5 +1,8 @@
 package main.hosts;
 
+import main.file.ChunkifiedFile;
+import main.file.ChunkifiedFileUtilities;
+import main.file.FileChunk;
 import main.messsage.ByteArrayUtilities;
 import main.messsage.Message;
 import main.messsage.MessageTypeConstants;
@@ -17,16 +20,10 @@ public class ClientThread extends Thread {
     RemotePeer remotePeer = null;
     Socket socket = null;
     Message message;
-    DataInputStream userInput = null;
-    OutputStream userOutput =  null;
+    DataInputStream input = null;
+    OutputStream output =  null;
 
     private boolean finHandshake;
-    private void setFinHandshake(boolean finHandshake) {
-        this.finHandshake = finHandshake;
-    }
-    private boolean getFinHandshake() {
-        return finHandshake;
-    }
 
     public ClientThread(Socket socket, Peer localPeer, RemotePeer remotePeer) throws IOException {
         this.socket = socket;
@@ -39,14 +36,15 @@ public class ClientThread extends Thread {
 
     public void run() {
         try {
+
             while (true) {
                 byte[] header = new byte[5];
                 // Read the header of the message, we must find this out before the body to know how much more to read
-                userInput.readFully(header);
+                input.readFully(header);
                 int bytesInBody = Message.BytesRemainingInMessageFromHeader(header);
                 byte[] body = new byte[bytesInBody];
                 // Now that we know how much is in the body, read the body
-                userInput.readFully(body);
+                input.readFully(body);
                 byte[] fullMessage = ByteArrayUtilities.combineTwoByteArrays(header, body);
                 message.update(fullMessage);
                 handle(message);
@@ -99,6 +97,7 @@ public class ClientThread extends Thread {
                 break;
             case MessageTypeConstants.PIECE:
                 System.out.println("Piece");
+                this.handlePiece(message);
                 break;
             default:
                 System.out.print("Unknown Message Type");
@@ -115,20 +114,23 @@ public class ClientThread extends Thread {
 
     private void setupSocketIO() {
         try {
-            this.userInput = new DataInputStream(this.socket.getInputStream());
-            this.userOutput = this.socket.getOutputStream();
+            this.input = new DataInputStream(this.socket.getInputStream());
+            this.output = this.socket.getOutputStream();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
+    private void setFinHandshake(boolean finHandshake) { this.finHandshake = finHandshake; }
+
+    private boolean getFinHandshake() { return finHandshake; }
 
     /*************** Protocol Methods ****************/
     
     private void initHandshake() throws IOException {
         setFinHandshake(false);
         message = Message.createHandShakeMessageFromPeerId(this.localPeer.getPeerID());
-        userOutput.write(message.getFull());
-        userOutput.flush();
+        this.sendMessage(message);
     }
 
     private void completeHandShake(Message message) throws IOException {
@@ -150,13 +152,25 @@ public class ClientThread extends Thread {
     private void handleUnchoke(Message message) { }
 
     // Actual Message #2 outgoing
-    private void sendInterested(){}
+    private void sendInterested() throws IOException {
+        this.message.mutateIntoUnInterested();
+        this.sendMessage(message);
+    }
 
     // Actual Message #2 incoming
     private void handleInterested(Message message) { }
 
     // Actual Message #3 outgoing
-    private void sendNotInterested(){}
+    private void sendNotInterested() throws IOException {
+        this.message.mutateIntoUnInterested();
+        this.sendMessage(message);
+
+    }
+
+    private void sendMessage(Message message) throws IOException {
+            userOutput.write(message.getFull());
+            userOutput.flush();
+    }
 
     // Actual Message #3 incoming
     private void handleNotInterested(Message message) { }
@@ -172,6 +186,13 @@ public class ClientThread extends Thread {
         // Store the chunk before we forget.
         // We should only receive have messages for chunks the peer didn't have.
         // Doesn't matter much anyway, we can send out interested messages as many times as we want.
+        // No need for an else here. We are either
+        // If the new chunk is interesting, then
+          // A) Already interested, in which case we will send another interested message.
+          // B) Not interested, in which case we send out a message changing our status.
+        // If not an interesting chunk, then
+          // A) Already interested, not sending out a new interested message won't change this.
+          // B) Not interested, so we leave the remote peer alone, they still have nothing we won't.
         this.remotePeer.setBit(chunkIndex,true);
         if ( !this.getLocalPeer().getChunky().hasChunk(chunkIndex) ) {
             // If we don't have this chunk, then we are interested!
@@ -190,8 +211,7 @@ public class ClientThread extends Thread {
             message.mutateIntoBitField(localPeer.getChunky().AvailableChunks());
 
             // Send BITFIELD
-            userOutput.write(message.getFull());
-            userOutput.flush();
+            this.sendMessage(message);
         }
         else {
             throw new IllegalArgumentException("Received Multiple Handshakes");
@@ -200,24 +220,32 @@ public class ClientThread extends Thread {
 
     private void sendInterestedMessageToRemotePeer() throws IOException {
         message.mutateIntoInterested();
-        userOutput.write(message.getFull());
-        userOutput.flush();
+        this.sendMessage(message);
     }
 
     // Actual Message #5 incoming
-    private void handleBitField(Message message) {
+    private void handleBitField(Message message) throws IOException {
         System.out.println("Received a bitfield! " + Arrays.toString(message.getBitFieldPayload(localPeer.getChunky().getChunkCount())));
+        this.remotePeer.setBitSet(message.getBitFieldPayload(localPeer.getChunky().getChunkCount()));
         // Evaluate whether interested or not
+        // If the remote peer has a chunk we do not, we are interested!
+        // Otherwise, inform the peer we are not interested!
+        if (ChunkifiedFileUtilities.doesAHaveChunksBDoesNot(remotePeer.getBitset(),localPeer.getChunky().AvailableChunks())) {
+            this.sendInterested();
+        } else {
+            this.sendNotInterested();
+        }
+
     }
 
     // Actual Message #6 outgoing
     private void sendRequest() {
-//        String payload = message.getM3();
-//        byte[] bSet = ChunkifiedFileUtilities.getByteSetFromString(payload);
-//        this.peer.getChunky().
-//        String payload = "";
-//        message.update(1,message.REQUEST, payload);
-//        userOutput.println(message.getFull());
+        //        String payload = message.getM3();
+        //        byte[] bSet = ChunkifiedFileUtilities.getByteSetFromString(payload);
+        //        this.peer.getChunky().
+        //        String payload = "";
+        //        message.update(1,message.REQUEST, payload);
+        //        userOutput.println(message.getFull());
     }
 
     // Actual Message #6 incoming
@@ -225,14 +253,18 @@ public class ClientThread extends Thread {
 
         // randomly pick an index with an empty bit value
 
-//        if(this.peer.getChunky().hasChunk(0));
+        //        if(this.peer.getChunky().hasChunk(0));
 
     }
 
-    public Peer getLocalPeer() { return localPeer; }
+    private void handlePiece(Message message) {
+        int pieceIndex = message.getIndexPayload();
+        FileChunk pieceGot = message.getFileChunkPayload();
+        this.getLocalPeer().getChunky().setChunk(pieceIndex,pieceGot);
 
-    // Actual Message #7 outgoing
-    private void sendPiece() {}
-    // Actual Message #7 incoming
-    private void handlePiece(Message message) { }
+        // TODO: Have all peers redetermine if interested in current peer
+        // TODO: Send have messages to all peers.
+    }
+
+    public Peer getLocalPeer() { return localPeer; }
 }

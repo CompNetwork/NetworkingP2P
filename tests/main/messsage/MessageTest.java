@@ -13,7 +13,7 @@ public class MessageTest {
     public void updateFromByteArray_CreateHaveMessage_ValidHaveMessageWithCorrectPayload() {
        Message message = new Message();
 
-       byte[] m1 = { 0x00, 0x00, 0x00, 0x04 };
+       byte[] m1 = { 0x00, 0x00, 0x00, 0x05 };
        byte[] m2 = { MessageTypeConstants.HAVE };
        int index = 42;
        byte[] m3 = ByteArrayUtilities.SplitIntInto4ByteArray(42);
@@ -44,7 +44,10 @@ public class MessageTest {
     @Test
     public void BytesRemainingInMessageFromHeader_HaveMessage_GetPayloadLength() {
         byte[] header = {0x00, 0x00, 0x12, 0x34, MessageTypeConstants.HAVE};
-        Assert.assertEquals(0x00001234,Message.BytesRemainingInMessageFromHeader(header));
+        // The size in the header includes the following type field.
+        // The body however, is only the payload, not the type field. (We had to already read the type filed in to determine message type!)
+        // So subtract 1.
+        Assert.assertEquals(0x00001233,Message.BytesRemainingInMessageFromHeader(header));
     }
 
     @Test
@@ -53,7 +56,7 @@ public class MessageTest {
         message.mutateIntoHave(42);
         Assert.assertEquals(MessageTypeConstants.HAVE,message.getmType());
         Assert.assertEquals(42,message.getIndexPayload());
-        byte[] expectedMessage = { 0x00,0x00,0x00,0x04, MessageTypeConstants.HAVE, 0x00, 0x00, 0x00,  0x2A};
+        byte[] expectedMessage = { 0x00,0x00,0x00,0x05, MessageTypeConstants.HAVE, 0x00, 0x00, 0x00,  0x2A};
         Assert.assertArrayEquals(expectedMessage,message.getFull());
     }
 
@@ -74,7 +77,7 @@ public class MessageTest {
         message.mutateIntoRequest(42);
         Assert.assertEquals(MessageTypeConstants.REQUEST,message.getmType());
         Assert.assertEquals(42,message.getIndexPayload());
-        byte[] expectedMessage = { 0x00,0x00,0x00,0x04, MessageTypeConstants.REQUEST, 0x00, 0x00, 0x00,  0x2A};
+        byte[] expectedMessage = { 0x00,0x00,0x00,0x05, MessageTypeConstants.REQUEST, 0x00, 0x00, 0x00,  0x2A};
         Assert.assertArrayEquals(expectedMessage,message.getFull());
     }
 
@@ -85,18 +88,21 @@ public class MessageTest {
         message.mutateIntoBitField(expected);
         Assert.assertEquals(MessageTypeConstants.BITFIELD,message.getmType());
         Assert.assertArrayEquals(expected,message.getBitFieldPayload(expected.length));
-        byte[] expectedMessage = { 0x00,0x00,0x00,0x01, MessageTypeConstants.BITFIELD, (byte)0xB0};
+        byte[] expectedMessage = { 0x00,0x00,0x00,0x02, MessageTypeConstants.BITFIELD, (byte)0xB0};
         Assert.assertArrayEquals(expectedMessage,message.getFull());
     }
 
     @Test
     public void mutateIntoPiece_MutatesIntoPiece_BecomesAPieceMessage() {
         Message message = new Message();
-        byte[] expected = {(byte)0xDE,(byte)0xED,(byte)0xBE,(byte)0xEF};
-        message.mutateIntoPiece(new FileChunkImpl(expected));
+        byte[] expectedFilePayload = {(byte)0xDE,(byte)0xED,(byte)0xBE,(byte)0xEF};
+        int expectedIndexPayload = 0x12345678;
+        message.mutateIntoPiece(new FileChunkImpl(expectedFilePayload), expectedIndexPayload);
         Assert.assertEquals(MessageTypeConstants.PIECE,message.getmType());
-        Assert.assertArrayEquals(expected,message.getFileChunkPayload().asByteArray());
-        byte[] expectedMessage = { 0x00,0x00,0x00,0x04, MessageTypeConstants.PIECE, (byte)0xDE,(byte)0xED,(byte)0xBE,(byte)0xEF};
+        Assert.assertEquals(expectedIndexPayload,message.getIndexPayload());
+        Assert.assertArrayEquals(expectedFilePayload,message.getFileChunkPayload().asByteArray());
+        // Size of message, type of message, index of piece, piece
+        byte[] expectedMessage = { 0x00,0x00,0x00,0x09, MessageTypeConstants.PIECE, 0x12, 0x34, 0x56, 0x78, (byte)0xDE,(byte)0xED,(byte)0xBE,(byte)0xEF};
         Assert.assertArrayEquals(expectedMessage,message.getFull());
     }
 
@@ -105,7 +111,7 @@ public class MessageTest {
         Message message = new Message();
         message.mutateIntoChoke();
         Assert.assertEquals(MessageTypeConstants.CHOKE,message.getmType());
-        byte[] expectedMessage = { 0x00,0x00,0x00,0x00, MessageTypeConstants.CHOKE};
+        byte[] expectedMessage = { 0x00,0x00,0x00,0x01, MessageTypeConstants.CHOKE};
         Assert.assertArrayEquals(expectedMessage,message.getFull());
     }
 
@@ -114,7 +120,7 @@ public class MessageTest {
         Message message = new Message();
         message.mutateIntoUnChoke();
         Assert.assertEquals(MessageTypeConstants.UNCHOKE,message.getmType());
-        byte[] expectedMessage = { 0x00,0x00,0x00,0x00, MessageTypeConstants.UNCHOKE};
+        byte[] expectedMessage = { 0x00,0x00,0x00,0x01, MessageTypeConstants.UNCHOKE};
         Assert.assertArrayEquals(expectedMessage,message.getFull());
     }
 
@@ -123,7 +129,7 @@ public class MessageTest {
         Message message = new Message();
         message.mutateIntoInterested();
         Assert.assertEquals(MessageTypeConstants.INTERESTED,message.getmType());
-        byte[] expectedMessage = { 0x00,0x00,0x00,0x00, MessageTypeConstants.INTERESTED};
+        byte[] expectedMessage = { 0x00,0x00,0x00,0x01, MessageTypeConstants.INTERESTED};
         Assert.assertArrayEquals(expectedMessage,message.getFull());
     }
 
@@ -132,7 +138,7 @@ public class MessageTest {
         Message message = new Message();
         message.mutateIntoUnInterested();
         Assert.assertEquals(MessageTypeConstants.UNINTERESTED,message.getmType());
-        byte[] expectedMessage = { 0x00,0x00,0x00,0x00, MessageTypeConstants.UNINTERESTED};
+        byte[] expectedMessage = { 0x00,0x00,0x00,0x01, MessageTypeConstants.UNINTERESTED};
         Assert.assertArrayEquals(expectedMessage,message.getFull());
     }
 

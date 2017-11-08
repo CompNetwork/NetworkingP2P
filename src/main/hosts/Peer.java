@@ -6,6 +6,7 @@ import main.config.reader.CommonConfigReader;
 import main.file.ChunkifiedFile;
 import main.logger.Logger;
 import main.messsage.Message;
+import main.unchoking.CalculateHighestUploadingNeighbors;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -13,6 +14,8 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class Peer {
 
@@ -30,6 +33,7 @@ public class Peer {
     private ServerSocket sSocket;
     private ChunkifiedFile chunky;
     private Logger logger;
+    private Timer time;
 
     public Peer(String peerID, String hostname, int port) {
         this.peerID = peerID;
@@ -38,6 +42,7 @@ public class Peer {
         this.connections = new ArrayList<ClientThread>();
         this.logger = new Logger();
         this.chunky = initFileChunk(this.peerID);
+        this.time = new Timer();
         //this.run();
     }
 
@@ -228,6 +233,7 @@ public class Peer {
         uninterested.mutateIntoUnInterested();
         for (ClientThread thread : connections) {
             if (!thread.isRemotePeerInteresting() ) {
+                thread.remotePeer.setInterested(false);
                 thread.sendMessage(uninterested);
             }
         }
@@ -235,5 +241,38 @@ public class Peer {
 
     public void informOfReceivedPiece(String peerID, int sizeOfPiece) {
         // TODO: Andy
+    }
+
+    public void updateChokingAndUnchoking(){
+
+        //unchoking
+        time.schedule(new TimerTask() {
+            public void run(){
+                CalculateHighestUploadingNeighbors cn = new CalculateHighestUploadingNeighbors();
+                cn.getKBestUploaders(4);            //get k specified from file
+                //tell them to unchoke list
+                //choke the rest
+            }
+
+        }, 8000);   //replace this hardcoded number with fileSpecifiedNum
+
+        //optimistically unchoking
+        //every m seconds
+        //if peer is interested AND choked,
+        //unchoke RANDOM peer from those that meet criteria
+        time.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                for (ClientThread thread : connections) {
+                    if (thread.remotePeer.getChoked() && thread.remotePeer.getInterested() ) {
+                        //add to list
+                    }
+                }
+
+                //randomly choose 1 to unchoke
+                //peer sends out unchoke message
+                //expects request
+            }
+        }, 15000);           //replace this hardcoded number with fileSpecifiedNum
     }
 }

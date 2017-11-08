@@ -8,10 +8,13 @@ public class RemotePeer {
     // If equals NO_PEER_ID_YET, then we haven't received the handshake message and don't know the peerID!
     private String peerID;
     private boolean[] bitset;
+    private boolean interested;
+    private boolean choked;
 
     public RemotePeer(String peerID, int chunkCount) {
         this.peerID = peerID;
         this.bitset = new boolean[chunkCount];
+        this.interested = false;
     }
 
     public boolean getBit(int i) {
@@ -36,5 +39,21 @@ public class RemotePeer {
 
     public boolean[] getBitset() {
         return bitset;
+    }
+
+    public void setInterested(boolean set){
+        this.interested = set;
+    }
+
+    public boolean getInterested(){
+        return interested;
+    }
+
+    public void setChoked(boolean set){
+        this.choked = set;
+    }
+
+    public boolean getChoked(){
+        return choked;
     }
 }

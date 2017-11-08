@@ -164,6 +164,7 @@ public class ClientThread extends Thread {
     // Mutates the parameter given
     private void sendInterested(Message m) throws IOException {
         m.mutateIntoUnInterested();
+        remotePeer.setInterested(false);
         sendMessage(m);
     }
 
@@ -174,6 +175,7 @@ public class ClientThread extends Thread {
     // Mutates the parameter given
     private void sendNotInterested(Message m) throws IOException {
         m.mutateIntoUnInterested();
+        remotePeer.setInterested(false);
         sendMessage(m);
 
     }
@@ -236,6 +238,8 @@ public class ClientThread extends Thread {
 
     private void sendInterestedMessageToRemotePeer(Message m) throws IOException {
         m.mutateIntoInterested();
+        //remotePeer keeps track of whether other peer is intersted in it.
+        remotePeer.setInterested(true);
         this.sendMessage(m);
     }
 

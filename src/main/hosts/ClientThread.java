@@ -1,6 +1,6 @@
 package main.hosts;
 
-import main.file.ChunkifiedFile;
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 import main.file.ChunkifiedFileUtilities;
 import main.file.FileChunk;
 import main.messsage.ByteArrayUtilities;
@@ -10,6 +10,7 @@ import main.messsage.MessageTypeConstants;
 import java.io.*;
 import java.net.Socket;
 import java.util.Arrays;
+import java.util.Random;
 
 
 public class ClientThread extends Thread {
@@ -133,50 +134,64 @@ public class ClientThread extends Thread {
         this.sendMessage(message);
     }
 
-    private void completeHandShake(Message message) throws IOException {
-        String peerID = message.getPeerIdPayload();
+    private void completeHandShake(Message m) throws IOException {
+        String peerID = m.getPeerIdPayload();
         this.remotePeer.setPeerId(peerID);
-        sendBitField(peerID);
+        sendBitField(peerID,m);
     }
 
     // Actual Message #0 outgoing
-    private void sendChoke(){}
+    // Mutates the parameter given
+    private void sendChoke(Message m) throws IOException {
+        m.mutateIntoChoke();
+        this.sendMessage(m);
+    }
 
     // Actual Message #0 incoming
     private void handleChoke(Message message) { }
 
     // Actual Message #1 outgoing
-    private void sendUnchoke(){}
+    // Mutates the parameter given
+    private void sendUnchoke(Message m) throws IOException {
+        m.mutateIntoUnChoke();
+        this.sendMessage(m);
+    }
 
     // Actual Message #1 incoming
     private void handleUnchoke(Message message) { }
 
     // Actual Message #2 outgoing
-    private void sendInterested() throws IOException {
-        this.message.mutateIntoUnInterested();
-        this.sendMessage(message);
+    // Mutates the parameter given
+    private void sendInterested(Message m) throws IOException {
+        m.mutateIntoUnInterested();
+        sendMessage(m);
     }
 
     // Actual Message #2 incoming
     private void handleInterested(Message message) { }
 
     // Actual Message #3 outgoing
-    private void sendNotInterested() throws IOException {
-        this.message.mutateIntoUnInterested();
-        this.sendMessage(message);
+    // Mutates the parameter given
+    private void sendNotInterested(Message m) throws IOException {
+        m.mutateIntoUnInterested();
+        sendMessage(m);
 
     }
 
-    private void sendMessage(Message message) throws IOException {
-            userOutput.write(message.getFull());
-            userOutput.flush();
+    public void sendMessage(Message m) throws IOException {
+            output.write(m.getFull());
+            output.flush();
     }
 
     // Actual Message #3 incoming
     private void handleNotInterested(Message message) { }
 
     // Actual Message #4 outgoing
-    private void sendHave(){}
+    // Mutates the parameter given
+    private void sendHave(Message m, int index) throws IOException {
+        m.mutateIntoHave(index);
+        sendMessage(m);
+    }
 
     // Actual Message #4 incoming
     private void handleHave(Message message) throws IOException {
@@ -197,74 +212,103 @@ public class ClientThread extends Thread {
         if ( !this.getLocalPeer().getChunky().hasChunk(chunkIndex) ) {
             // If we don't have this chunk, then we are interested!
             System.out.println("Sending interested message, as we don't have!");
-            sendInterestedMessageToRemotePeer();
+            sendInterestedMessageToRemotePeer(message);
         }
     }
 
     // Actual Message #5 outgoing
-    private void sendBitField(String peerID) throws IOException {
+    // Mutates the parameter given
+    private void sendBitField(String peerID, Message m) throws IOException {
         if(!this.getFinHandshake()) {
             this.setFinHandshake(true);
             this.remotePeer.setPeerId(peerID);
             this.localPeer.getLogger().TCPConnectionLog(this.localPeer.getPeerID(), this.remotePeer.getPeerID());
             System.out.println("Sending bitfield!" + Arrays.toString(localPeer.getChunky().AvailableChunks()));
-            message.mutateIntoBitField(localPeer.getChunky().AvailableChunks());
+            m.mutateIntoBitField(localPeer.getChunky().AvailableChunks());
 
             // Send BITFIELD
-            this.sendMessage(message);
+            this.sendMessage(m);
         }
         else {
             throw new IllegalArgumentException("Received Multiple Handshakes");
         }
     }
 
-    private void sendInterestedMessageToRemotePeer() throws IOException {
-        message.mutateIntoInterested();
-        this.sendMessage(message);
+    private void sendInterestedMessageToRemotePeer(Message m) throws IOException {
+        m.mutateIntoInterested();
+        this.sendMessage(m);
     }
 
     // Actual Message #5 incoming
+    // Mutates the parameter given
     private void handleBitField(Message message) throws IOException {
         System.out.println("Received a bitfield! " + Arrays.toString(message.getBitFieldPayload(localPeer.getChunky().getChunkCount())));
         this.remotePeer.setBitSet(message.getBitFieldPayload(localPeer.getChunky().getChunkCount()));
         // Evaluate whether interested or not
         // If the remote peer has a chunk we do not, we are interested!
         // Otherwise, inform the peer we are not interested!
-        if (ChunkifiedFileUtilities.doesAHaveChunksBDoesNot(remotePeer.getBitset(),localPeer.getChunky().AvailableChunks())) {
-            this.sendInterested();
+        if (this.isRemotePeerInteresting()) {
+            this.sendInterested(message);
         } else {
-            this.sendNotInterested();
+            this.sendNotInterested(message);
         }
 
     }
 
     // Actual Message #6 outgoing
-    private void sendRequest() {
-        //        String payload = message.getM3();
-        //        byte[] bSet = ChunkifiedFileUtilities.getByteSetFromString(payload);
-        //        this.peer.getChunky().
-        //        String payload = "";
-        //        message.update(1,message.REQUEST, payload);
-        //        userOutput.println(message.getFull());
+    // Mutates the parameter given
+    private void sendRequest(Message m, int payloadNotUsed) throws IOException {
+
+
+        /*TODO: if Unchoke */
+        //if(!RemotePeer.isChoke){
+            int [] missingChunksIndices = ChunkifiedFileUtilities.getIndexesOfBitsetAthatBitsetBDoesNotHave(this.remotePeer.getBitset(), this.localPeer.getChunky().AvailableChunks());
+            int payload = new Random().nextInt(missingChunksIndices.length);
+            m.mutateIntoRequest(payload);
+            this.sendMessage(m);
+        // }
+
     }
 
     // Actual Message #6 incoming
-    private void handleRequest(Message message) {
+    private void handleRequest(Message message) throws IOException {
 
-        // randomly pick an index with an empty bit value
-
-        //        if(this.peer.getChunky().hasChunk(0));
-
+        /*TODO: if Unchoke*/
+            // Extracts piece from sent message
+            int pieceIndex = message.getIndexPayload();
+            // Updates message.type and payload
+            message.mutateIntoPiece(this.localPeer.getChunky().getChunk(pieceIndex), pieceIndex);
+            sendMessage(message);
     }
 
-    private void handlePiece(Message message) {
+    // Actual Message #7 outgoing
+    // Mutates the parameter given
+    private void sendPiece(FileChunk chunk, int index, Message m) throws IOException {
+        m.mutateIntoPiece(chunk,index);
+        this.sendMessage(m);
+    }
+
+    // Actual Message #7 outgoing
+    private void handlePiece(Message message) throws IOException {
         int pieceIndex = message.getIndexPayload();
         FileChunk pieceGot = message.getFileChunkPayload();
         this.getLocalPeer().getChunky().setChunk(pieceIndex,pieceGot);
 
-        // TODO: Have all peers redetermine if interested in current peer
-        // TODO: Send have messages to all peers.
+        // Inform the remote peer that I have received a piece of size N from peer ID
+        this.getLocalPeer().informOfReceivedPiece(remotePeer.getPeerID(),pieceGot.size());
+
+        // Send a have message to all peers.
+        this.getLocalPeer().sendHaveMessageToAllRemotePeers(pieceIndex);
+
+        // Send uninterested message to all uninteresting peers
+        this.getLocalPeer().sendUninterestedToAllUninterestingPeers();
+
     }
 
     public Peer getLocalPeer() { return localPeer; }
+
+    public boolean isRemotePeerInteresting() {
+        // If remotePeer has a bit we do not, it is interesting.
+        return ChunkifiedFileUtilities.doesAHaveChunksBDoesNot(remotePeer.getBitset(),localPeer.getChunky().AvailableChunks());
+    }
 }

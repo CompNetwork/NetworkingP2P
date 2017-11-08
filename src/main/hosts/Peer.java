@@ -1,9 +1,11 @@
 package main.hosts;
 
+import com.sun.security.ntlm.Client;
 import main.config.pod.CommonConfigData;
 import main.config.reader.CommonConfigReader;
 import main.file.ChunkifiedFile;
 import main.logger.Logger;
+import main.messsage.Message;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -204,5 +206,34 @@ public class Peer {
 
     public String getPeerID() {
         return peerID;
+    }
+
+    public void sendMessageToAllRemotePeers(Message message) throws IOException {
+        for (ClientThread thread : connections) {
+            thread.sendMessage(message);
+        }
+    }
+    public void sendHaveMessageToAllRemotePeers(int index)  throws IOException {
+        // Do not reuse the existing message, multi threading problems!!
+        Message m = new Message();
+        m.mutateIntoHave(index);
+        this.sendMessageToAllRemotePeers(m);
+    }
+
+    // For each client thread (remote peer), determine if we are still interested in them.
+    // If we are not, send a uninterested message.
+    // We do not check if a peer is uninteresting before hand. If a peer was uninteresting before hand.
+    public void sendUninterestedToAllUninterestingPeers() throws IOException {
+        Message uninterested = new Message();
+        uninterested.mutateIntoUnInterested();
+        for (ClientThread thread : connections) {
+            if (!thread.isRemotePeerInteresting() ) {
+                thread.sendMessage(uninterested);
+            }
+        }
+    }
+
+    public void informOfReceivedPiece(String peerID, int sizeOfPiece) {
+        // TODO: Andy
     }
 }

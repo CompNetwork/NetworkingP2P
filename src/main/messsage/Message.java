@@ -73,6 +73,7 @@ public class Message  {
     public void mutateIntoUnInterested() {
         this.update(MessageTypeConstants.UNINTERESTED,null);
     }
+
     public void mutateIntoHandshake(String peerID) {
         this.setAsHandshakeMessage(peerID.getBytes(StandardCharsets.ISO_8859_1));
     }
@@ -84,13 +85,19 @@ public class Message  {
     public void mutateIntoRequest(int payload) {
         this.update(MessageTypeConstants.REQUEST,payload);
     }
+
     // Now for the two actually complicated causes, the bitfield, and the piece!
     public void mutateIntoBitField(boolean[] bitfield) {
         byte[] byteField = ChunkifiedFileUtilities.getByteSetFromBitSet(bitfield);
         this.update(MessageTypeConstants.BITFIELD,byteField);
     }
-    public void mutateIntoPiece(FileChunk piece) {
-        this.update(MessageTypeConstants.PIECE,piece.asByteArray());
+    public void mutateIntoPiece(FileChunk piece, int pieceIndex) {
+        byte[] fileinBytes = piece.asByteArray();
+        byte[] fileChunkSize = ByteArrayUtilities.SplitIntInto4ByteArray(pieceIndex);
+        byte[] piecePayload = new byte[fileinBytes.length+fileChunkSize.length];
+        System.arraycopy(fileChunkSize,0,piecePayload,0,fileChunkSize.length);
+        System.arraycopy(fileinBytes,0,piecePayload,4,fileinBytes.length);
+        this.update(MessageTypeConstants.PIECE,piecePayload);
     }
 
     public static Message createHandShakeMessageFromPeerId(String peerID) {
@@ -107,10 +114,9 @@ public class Message  {
         mType = MessageTypeConstants.HANDSHAKE;
     }
 
-
-
     // Updates the state of the Message object depending on the rawData
     public void update(byte[] rawData) {
+        // TODO: Bregg Add validating for all types of messages. EX: Validate a have message has an index field.
 
         // Sets message value for handshaking
         if (isMessageHandShake(rawData)) {
@@ -122,12 +128,41 @@ public class Message  {
             m1 = Arrays.copyOfRange(rawData,0,4);      //size
             m2 = Arrays.copyOfRange(rawData,4,5);      //message type
             mType = rawData[4];
-            int size = rawData.length;
-            if(size-5  > 0)
-                m3 = Arrays.copyOfRange(rawData,5,size);
+            int rawSize = rawData.length;
+            if(rawSize-5  > 0)
+                m3 = Arrays.copyOfRange(rawData,5,rawSize);
             else
                 m3 = new byte[0];
+
+            {
+                int givenSize = ByteArrayUtilities.recombine4ByteArrayIntoInt(m1);
+                if (rawSize - 4 != givenSize) {
+                    System.err.println("Error, specified message size is not equal to payload!");
+                    throw new IllegalArgumentException("EError, specified message size is not equal to payload! Length:" + rawSize + " GivenLength:" + givenSize);
+                }
+            }
         }
+    }
+
+    // FIXME: Naming for this signature doesn't seem to be intuitive. This seems to be a helper function for update
+    private void update(byte type, int payload) {
+        byte[] splitPayload = ByteArrayUtilities.SplitIntInto4ByteArray(payload);
+        this.update(type,splitPayload);
+    }
+
+    private void update(byte type, byte[] payload) {
+        // TODO: Bregg Add validating for all types of messages. EX: Validate a have message has an index field.
+        if (payload == null ) {
+            payload = new byte[0];
+            // Just for simpler impl.
+            // Not really worrying about perf atm.
+        }
+        // Payload.length, + 1 for the type field.
+        this.m1 = ByteArrayUtilities.SplitIntInto4ByteArray(payload.length+1);
+        this.m2 = new byte[1];
+        m2[0] = type;
+        mType = type;
+        m3 = payload;
     }
 
 
@@ -156,6 +191,10 @@ public class Message  {
         if ( this.getmType() == MessageTypeConstants.HAVE || this.getmType() == MessageTypeConstants.REQUEST ) {
             return ByteArrayUtilities.recombine4ByteArrayIntoInt(this.getM3());
         }
+        if ( this.getmType() == MessageTypeConstants.PIECE ) {
+            return ByteArrayUtilities.recombine4ByteArrayIntoInt(Arrays.copyOfRange(this.getM3(),0,4));
+        }
+
         throw new IllegalStateException("Error, trying to get an integer payload from a message with no integer payload!");
     }
 
@@ -173,28 +212,11 @@ public class Message  {
     // throws an illegal state exception otherwise.
     public FileChunk getFileChunkPayload() {
         if ( this.getmType() == MessageTypeConstants.PIECE ) {
-            return new FileChunkImpl(this.getM3());
+            byte[] indexAndPayload = this.getM3();
+            return new FileChunkImpl(Arrays.copyOfRange(indexAndPayload,4,indexAndPayload.length));
+
         }
         throw new IllegalStateException("Error, trying to get an FileChunk payload from non piece message!");
-
-    }
-
-    private void update(byte type, int payload) {
-        byte[] splitPayload = ByteArrayUtilities.SplitIntInto4ByteArray(payload);
-        this.update(type,splitPayload);
-    }
-
-    private void update(byte type, byte[] payload) {
-        if (payload == null ) {
-            payload = new byte[0];
-            // Just for simpler impl.
-            // Not really worrying about perf atm.
-        }
-        this.m1 = ByteArrayUtilities.SplitIntInto4ByteArray(payload.length);
-        this.m2 = new byte[1];
-        m2[0] = type;
-        mType = type;
-        m3 = payload;
 
     }
 
@@ -219,7 +241,10 @@ public class Message  {
         } else {
             // This is a "actual" message!
             int remainingLength = ByteArrayUtilities.recombine4BytesIntoInts(header[0], header[1], header[2], header[3]);
-            return remainingLength;
+            // Why is this minus 1?
+            // Because remaining length is the message size which is | type + payload |.
+            // Since we already read in the payload, subtract 1 to account for that!
+            return remainingLength-1;
         }
     }
 }

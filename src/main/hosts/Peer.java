@@ -249,8 +249,44 @@ public class Peer {
         time.schedule(new TimerTask() {
             public void run(){
                 CalculateHighestUploadingNeighbors cn = new CalculateHighestUploadingNeighbors();
-                cn.getKBestUploaders(4);            //get k specified from file
+                ArrayList<String> toUnchoke = cn.getKBestUploaders(2);            //get k specified from file
                 //tell them to unchoke list
+                Message unchoke = new Message();
+                unchoke.mutateIntoUnChoke();
+                Message choke = new Message();
+                choke.mutateIntoChoke();
+                /*for(String unc : toUnchoke){
+                    for(ClientThread thread : connections){
+                        if(thread.remotePeer.getPeerID() == unc){
+
+                        }
+                    }
+
+                }*/
+                for(ClientThread thread : connections){
+                    boolean wasUnchoked = false;
+                    for(String unc : toUnchoke){
+                        if(thread.remotePeer.getPeerID()== unc){
+                            wasUnchoked = true;
+                            try{
+                                thread.sendMessage(unchoke);
+
+                            }
+                            catch(Exception e){
+                                System.out.println("Failed to send unchoke.");
+                            }
+                        }
+                    }
+                    if(!wasUnchoked){
+                        
+                        try {
+                            thread.sendMessage(choke);
+                        }
+                        catch(Exception e){
+                            System.out.println("Failed to send choke");
+                        }
+                    }
+                }
                 //choke the rest
             }
 

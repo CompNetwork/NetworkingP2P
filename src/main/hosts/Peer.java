@@ -263,15 +263,30 @@ public class Peer {
         time.schedule(new TimerTask() {
             @Override
             public void run() {
+                ArrayList <ClientThread> possibleUnchoking = new ArrayList<ClientThread>();
                 for (ClientThread thread : connections) {
                     if (thread.remotePeer.getChoked() && thread.remotePeer.getInterested() ) {
                         //add to list
+                        possibleUnchoking.add(thread);
                     }
                 }
 
                 //randomly choose 1 to unchoke
+                int random;
+                random = (int)Math.floor(possibleUnchoking.size() * Math.random());
                 //peer sends out unchoke message
-                //expects request
+                possibleUnchoking.get(random).remotePeer.setChoked(false);
+                Message unchoke = new Message();
+                unchoke.mutateIntoUnChoke();
+                //I have no idea why it forced me to put it into a try/catch
+                try{
+                    possibleUnchoking.get(random).sendMessage(unchoke);
+                } catch(Exception e) {
+                    System.out.println("Could not send unchoking message in updateChokingUnchoking");
+                }
+
+                //expects request back
+                //???
             }
         }, 15000);           //replace this hardcoded number with fileSpecifiedNum
     }

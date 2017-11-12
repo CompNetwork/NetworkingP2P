@@ -164,7 +164,7 @@ public class ClientThread extends Thread {
     // Mutates the parameter given
     private void sendInterested(Message m) throws IOException {
         m.mutateIntoUnInterested();
-        remotePeer.setInterested(false);
+        remotePeer.setInterested(true);
         sendMessage(m);
     }
 
@@ -214,7 +214,8 @@ public class ClientThread extends Thread {
         if ( !this.getLocalPeer().getChunky().hasChunk(chunkIndex) ) {
             // If we don't have this chunk, then we are interested!
             System.out.println("Sending interested message, as we don't have!");
-            sendInterestedMessageToRemotePeer(message);
+            sendInterested(message);
+            this.remotePeer.setInterested(true);
         }
     }
 
@@ -236,13 +237,6 @@ public class ClientThread extends Thread {
         }
     }
 
-    private void sendInterestedMessageToRemotePeer(Message m) throws IOException {
-        m.mutateIntoInterested();
-        //remotePeer keeps track of whether other peer is intersted in it.
-        remotePeer.setInterested(true);
-        this.sendMessage(m);
-    }
-
     // Actual Message #5 incoming
     // Mutates the parameter given
     private void handleBitField(Message message) throws IOException {
@@ -251,7 +245,8 @@ public class ClientThread extends Thread {
         // Evaluate whether interested or not
         // If the remote peer has a chunk we do not, we are interested!
         // Otherwise, inform the peer we are not interested!
-        if (this.isRemotePeerInteresting()) {
+        this.remotePeer.setInterested(this.isRemotePeerInteresting());
+        if (this.remotePeer.getInterested()) {
             this.sendInterested(message);
         } else {
             this.sendNotInterested(message);

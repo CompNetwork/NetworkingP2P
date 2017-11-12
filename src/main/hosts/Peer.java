@@ -41,7 +41,9 @@ public class Peer {
         this.logger = new Logger();
         this.chunky = initFileChunk(this.peerID);
         this.time = new Timer();
-        this.calcHighestUploadNeigbor = new CalculateHighestUploadingNeighbors();
+        List<String> otherPeers = this.getPeerInfo();
+        otherPeers.remove(peerID);
+        this.calcHighestUploadNeigbor = new CalculateHighestUploadingNeighbors(otherPeers);
         //this.run();
     }
 
@@ -248,7 +250,7 @@ public class Peer {
     public void updateChokingAndUnchoking(){
 
         //unchoking
-        time.schedule(new TimerTask() {
+        time.scheduleAtFixedRate(new TimerTask() {
             public void run(){
 
                 ArrayList<String> toUnchoke = calcHighestUploadNeigbor.getKBestUploaders(2);            //get k specified from file //TODO GRAB FROM FILE
@@ -298,13 +300,13 @@ public class Peer {
                 calcHighestUploadNeigbor.clear();
             }
 
-        }, 8000);   //replace this hardcoded number with fileSpecifiedNum TODO GRAB FROM FILE
+        }, 8000,8000);   //replace this hardcoded number with fileSpecifiedNum TODO GRAB FROM FILE
 
         //optimistically unchoking
         //every m seconds
         //if peer is interested AND choked,
         //unchoke RANDOM peer from those that meet criteria
-        time.schedule(new TimerTask() {
+        time.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 ArrayList <ClientThread> possibleUnchoking = new ArrayList<ClientThread>();
@@ -339,6 +341,6 @@ public class Peer {
 
                 calcHighestUploadNeigbor.clear();
             }
-        }, 15000);           //replace this hardcoded number with fileSpecifiedNum
+        }, 15000,15000);           //replace this hardcoded number with fileSpecifiedNum
     }
 }

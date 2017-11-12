@@ -12,10 +12,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 public class Peer {
 
@@ -34,6 +31,7 @@ public class Peer {
     private ChunkifiedFile chunky;
     private Logger logger;
     private Timer time;
+    private CalculateHighestUploadingNeighbors calcHighestUploadNeigbor;
 
     public Peer(String peerID, String hostname, int port) {
         this.peerID = peerID;
@@ -43,6 +41,7 @@ public class Peer {
         this.logger = new Logger();
         this.chunky = initFileChunk(this.peerID);
         this.time = new Timer();
+        this.calcHighestUploadNeigbor = new CalculateHighestUploadingNeighbors();
         //this.run();
     }
 
@@ -81,6 +80,7 @@ public class Peer {
         } catch (IOException e) {
             System.out.println("No I/O");
         }
+        updateChokingAndUnchoking();
     }
 
     // Opens server connects
@@ -240,7 +240,9 @@ public class Peer {
     }
 
     public void informOfReceivedPiece(String peerID, int sizeOfPiece) {
-        // TODO: Andy
+        calcHighestUploadNeigbor.receivedNewPackageFromNeighbor(peerID,sizeOfPiece);
+
+
     }
 
     public void updateChokingAndUnchoking(){
@@ -248,8 +250,9 @@ public class Peer {
         //unchoking
         time.schedule(new TimerTask() {
             public void run(){
-                CalculateHighestUploadingNeighbors cn = new CalculateHighestUploadingNeighbors();
-                ArrayList<String> toUnchoke = cn.getKBestUploaders(2);            //get k specified from file
+
+                ArrayList<String> toUnchoke = calcHighestUploadNeigbor.getKBestUploaders(2);            //get k specified from file //TODO GRAB FROM FILE
+                System.out.println("Inside first scheduled task");
                 //tell them to unchoke list
                 Message unchoke = new Message();
                 unchoke.mutateIntoUnChoke();
@@ -270,6 +273,7 @@ public class Peer {
                             wasUnchoked = true;
                             try{
                                 thread.sendMessage(unchoke);
+                                thread.remotePeer.setChoked(false);
 
                             }
                             catch(Exception e){
@@ -278,9 +282,10 @@ public class Peer {
                         }
                     }
                     if(!wasUnchoked){
-                        
+
                         try {
                             thread.sendMessage(choke);
+                            thread.remotePeer.setChoked(true);
                         }
                         catch(Exception e){
                             System.out.println("Failed to send choke");
@@ -288,9 +293,12 @@ public class Peer {
                     }
                 }
                 //choke the rest
+
+                //clears out map.
+                calcHighestUploadNeigbor.clear();
             }
 
-        }, 8000);   //replace this hardcoded number with fileSpecifiedNum
+        }, 8000);   //replace this hardcoded number with fileSpecifiedNum TODO GRAB FROM FILE
 
         //optimistically unchoking
         //every m seconds
@@ -300,6 +308,7 @@ public class Peer {
             @Override
             public void run() {
                 ArrayList <ClientThread> possibleUnchoking = new ArrayList<ClientThread>();
+                System.out.println("Inside second scheduled task");
                 for (ClientThread thread : connections) {
                     if (thread.remotePeer.getChoked() && thread.remotePeer.getInterested() ) {
                         //add to list
@@ -308,21 +317,27 @@ public class Peer {
                 }
 
                 //randomly choose 1 to unchoke
-                int random;
-                random = (int)Math.floor(possibleUnchoking.size() * Math.random());
+                Random randomGenerator = new Random();
+
                 //peer sends out unchoke message
-                possibleUnchoking.get(random).remotePeer.setChoked(false);
-                Message unchoke = new Message();
-                unchoke.mutateIntoUnChoke();
-                //I have no idea why it forced me to put it into a try/catch
-                try{
-                    possibleUnchoking.get(random).sendMessage(unchoke);
-                } catch(Exception e) {
-                    System.out.println("Could not send unchoking message in updateChokingUnchoking");
+                System.out.println("Size of possibleUnchoking:" + possibleUnchoking.size());
+                if(possibleUnchoking.size() != 0) {
+                    int unchokeIndex = randomGenerator.nextInt(possibleUnchoking.size());
+                    possibleUnchoking.get(unchokeIndex).remotePeer.setChoked(false);
+                    Message unchoke = new Message();
+                    unchoke.mutateIntoUnChoke();
+                    //I have no idea why it forced me to put it into a try/catch
+                    try {
+                        possibleUnchoking.get(unchokeIndex).sendMessage(unchoke);
+                    } catch (Exception e) {
+                        System.out.println("Could not send unchoking message in updateChokingUnchoking");
+                    }
                 }
 
                 //expects request back
                 //???
+
+                calcHighestUploadNeigbor.clear();
             }
         }, 15000);           //replace this hardcoded number with fileSpecifiedNum
     }

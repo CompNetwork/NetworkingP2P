@@ -15,6 +15,7 @@ public class RemotePeer {
         this.peerID = peerID;
         this.bitset = new boolean[chunkCount];
         this.interested = false;
+        this.choked = false;
     }
 
     public boolean getBit(int i) {

@@ -82,4 +82,8 @@ public class CalculateHighestUploadingNeighbors {
         }
     }
 
+    public void clear(){
+        peerIdToUpload.clear();
+    }
+
 }

@@ -71,37 +71,37 @@ public class ClientThread extends Thread {
         switch ( type ) {
             case MessageTypeConstants.HANDSHAKE :
                 completeHandShake(message);
-                System.out.println("Handshake");
+                System.out.println("Received Handshake");
                 break;
             case MessageTypeConstants.CHOKE :
-                System.out.println("Choke");
+                System.out.println("Received Choke");
                 break;
             case MessageTypeConstants.UNCHOKE:
-                System.out.println("Unchoke");
+                System.out.println("Received Unchoke");
                 break;
             case MessageTypeConstants.INTERESTED:
-                System.out.println("Interested");
+                System.out.println("Received Interested");
                 break;
             case MessageTypeConstants.UNINTERESTED:
-                System.out.println("Not Interested");
+                System.out.println("Received Not Interested");
                 break;
             case MessageTypeConstants.HAVE:
-                System.out.println("Have");
+                System.out.println("Received Have");
                 handleHave(message);
                 break;
             case MessageTypeConstants.BITFIELD:
                 handleBitField(message);
-                System.out.println("Bitfield");
+                System.out.println("Received Bitfield");
                 break;
             case MessageTypeConstants.REQUEST:
-                System.out.println("Request");
+                System.out.println("Received Request");
                 break;
             case MessageTypeConstants.PIECE:
-                System.out.println("Piece");
+                System.out.println("Received Piece");
                 this.handlePiece(message);
                 break;
             default:
-                System.out.print("Unknown Message Type");
+                System.out.print("Received Unknown Message Type");
         }
     }
 
@@ -163,7 +163,7 @@ public class ClientThread extends Thread {
     // Actual Message #2 outgoing
     // Mutates the parameter given
     private void sendInterested(Message m) throws IOException {
-        m.mutateIntoUnInterested();
+        m.mutateIntoInterested();
         remotePeer.setInterested(true);
         sendMessage(m);
     }
@@ -246,6 +246,7 @@ public class ClientThread extends Thread {
         // If the remote peer has a chunk we do not, we are interested!
         // Otherwise, inform the peer we are not interested!
         this.remotePeer.setInterested(this.isRemotePeerInteresting());
+        System.out.println("We found the peers file to be interesting, yay or nay?: " + this.isRemotePeerInteresting());
         if (this.remotePeer.getInterested()) {
             this.sendInterested(message);
         } else {

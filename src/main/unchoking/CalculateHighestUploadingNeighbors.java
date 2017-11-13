@@ -11,6 +11,12 @@ public class CalculateHighestUploadingNeighbors {
     // A mapping of peer ids to upload rate in bytes.
     private Map<String,Integer> peerIdToUpload = Collections.synchronizedMap(new HashMap<>());
 
+    public CalculateHighestUploadingNeighbors(List<String> peerIds) {
+        for (String peerID : peerIds ) {
+            peerIdToUpload.put(peerID,0);
+        }
+        System.out.println("PeerIdList:"+peerIds.size());
+    }
     // Call whenever a package is received from a neighbor.
     public void receivedNewPackageFromNeighbor(String peerId, int bytesReceived) {
         throwInvalidRangeIfNegative(bytesReceived);
@@ -79,6 +85,13 @@ public class CalculateHighestUploadingNeighbors {
     private void printWarningifLessThanKPeers(int k) {
         if ( k > peerIdToUpload.size() ) {
             System.err.println("Not enough neighbors to get top K uploaders!");
+        }
+    }
+
+    public void clear(){
+        // Reset all values to 0. // TODO bregg make more efficient!
+        for ( String peerID : peerIdToUpload.keySet()) {
+            peerIdToUpload.put(peerID,0);
         }
     }
 

@@ -5,6 +5,7 @@ public class PeerConfigData {
     public final int peerId;
     public final String hostName;
     public final int listeningPort;
+    // True if has the file
     public final boolean hasFileOrNot;
 
     public PeerConfigData(int peerId, String hostName, int listeningPort, boolean hasFileOrNot) {

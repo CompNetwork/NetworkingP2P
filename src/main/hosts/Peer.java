@@ -1,27 +1,26 @@
 package main.hosts;
 
-import com.sun.security.ntlm.Client;
 import main.config.pod.CommonConfigData;
+import main.config.pod.PeerConfigData;
 import main.config.reader.CommonConfigReader;
+import main.config.reader.PeerConfigReader;
 import main.file.ChunkifiedFile;
 import main.logger.Logger;
 import main.messsage.Message;
+import main.unchoking.CalculateHighestUploadingNeighbors;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Peer {
 
     private static final String PEERINFO = "./src/main/hosts/PeerInfo.cfg";
     private static final String FILEPATH = "./src/main/hosts/Common.cfg";
-    private static final int PEERID = 0;
-    private static final int PEERHOSTNAME = 1;
-    private static final int PEERPORT = 2;
-    private static final int PEERHASFILE = 3;
 
     private String peerID;
     private String hostName;
@@ -30,15 +29,45 @@ public class Peer {
     private ServerSocket sSocket;
     private ChunkifiedFile chunky;
     private Logger logger;
+    private Timer time;
+    private CalculateHighestUploadingNeighbors calcHighestUploadNeigbor;
+    private ArrayList<PeerConfigData> peerConfigDatas;
+    CommonConfigData commonConfigData = null;
 
-    public Peer(String peerID, String hostname, int port) {
+    public Peer(String peerID, String hostname, int port) throws FileNotFoundException {
+
+        initCommonConfig();
+        PeerConfigReader peerConfigReader = new PeerConfigReader(new File(PEERINFO));
+        this.peerConfigDatas = peerConfigReader.getPeerConfigDatas();
         this.peerID = peerID;
         this.hostName = hostname;
         this.port = port;
         this.connections = new ArrayList<ClientThread>();
         this.logger = new Logger();
         this.chunky = initFileChunk(this.peerID);
-        //this.run();
+        this.time = new Timer();
+        // Read the config file, parse andstore the data.
+        this.calcHighestUploadNeigbor = new CalculateHighestUploadingNeighbors(getAllOtherPeers());
+    }
+
+    private void initCommonConfig() {
+        CommonConfigReader commonConfigReader = null;
+        try {
+            commonConfigReader = new CommonConfigReader(new File(FILEPATH));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        commonConfigData = commonConfigReader.getData();
+    }
+
+    private List<String> getAllOtherPeers() {
+        List<String> otherPeers = new ArrayList<String>();
+        for ( PeerConfigData peerConfigData : peerConfigDatas ) {
+            if ( !("" + peerConfigData.peerId).equals(peerID) )  {
+                otherPeers.add("" + peerConfigData.peerId);
+            }
+        }
+        return otherPeers;
     }
 
     // Starts P2P process
@@ -52,23 +81,23 @@ public class Peer {
     public void connect2Peers() {
 
         try {
-            List<String> peers = this.getPeerConnList();
+            List<PeerConfigData> peers = this.getPeerConnList();
             if (peers.size() == 0) System.out.println("I " + this.peerID + " am the first. No one to connect to.");
             else System.out.println("Connecting with peers " + peers);
 
-            for (String peer : peers) {
+            for (PeerConfigData peerConfigData : peers) {
+                String peerID = "" + peerConfigData.peerId;
 
-                System.out.println("Handling Peer: " + peer);
-                String [] peerCol = peer.split(" ");
+                System.out.println("Handling Peer: " + peerConfigData.toString());
 
-                System.out.println("I am " + this.peerID + " attempting to connect with " + peerCol[PEERID]);
-                Socket s = new Socket(peerCol[PEERHOSTNAME], Integer.valueOf(peerCol[PEERPORT]));
-                RemotePeer remotePeer = new RemotePeer(""+PEERID,chunky.getChunkCount());
+                System.out.println("I am " + this.peerID + " attempting to connect with " + peerID);
+                Socket s = new Socket(peerConfigData.hostName, Integer.valueOf(peerConfigData.listeningPort));
+                RemotePeer remotePeer = new RemotePeer(peerID,chunky.getChunkCount());
                 ClientThread ct = new ClientThread(s, this,remotePeer);
                 ct.start();
                 this.connections.add(ct);
 
-                System.out.println("Peer " + this.peerID + " has successfully connected with Peer " + peerCol[PEERID] + " via socket " + s.toString());
+                System.out.println("Peer " + this.peerID + " has successfully connected with Peer " + peerID + " via socket " + s.toString());
             }
 
         } catch (UnknownHostException e) {
@@ -76,6 +105,7 @@ public class Peer {
         } catch (IOException e) {
             System.out.println("No I/O");
         }
+        updateChokingAndUnchoking();
     }
 
     // Opens server connects
@@ -108,82 +138,39 @@ public class Peer {
 
     private ChunkifiedFile initFileChunk(String peerID) {
 
-        ChunkifiedFile cf = null;
-        List<String> list = this.getPeerInfo();
 
-        // Checks if I have the file
-        for (int i = 0; i < list.size(); i++) {
-            String [] lineArr = list.get(i).split(" ");
+        PeerConfigData self = this.getPeerConfigDataForSelf();
+        ChunkifiedFile chunkifiedFile = null;
+        // Sets the Chunkified File data if this localPeer has the file
+        if (self.hasFileOrNot) {
+            chunkifiedFile = ChunkifiedFile.GetFromExisingFile(commonConfigData.getFileName(), commonConfigData.getPieceSize(), commonConfigData.getFileSize());
+        } else {
 
-            if(lineArr[0].equals(this.peerID)) {
-                CommonConfigReader commonConfig = null;
-
-                // Checks if the value is valid
-                if(lineArr[3].equals("1") || lineArr[3].equals("0")) {
-
-                    try {
-                        commonConfig = new CommonConfigReader(new File(FILEPATH));
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    }
-
-                    CommonConfigData data = commonConfig.getData();
-
-                    // Sets the Chunkified File data if this localPeer has the file
-                    if(lineArr[3].equals("1")) {
-
-                        cf = ChunkifiedFile.GetFromExisingFile(data.getFileName(), data.getPieceSize(), data.getFileSize());
-                    } else {
-
-                        cf = ChunkifiedFile.CreateFile(data.getFileName(), data.getPieceSize(), data.getFileSize());
-                    }
-                    break;
-                } else {
-                    throw new IllegalArgumentException("Error in PeerInfo.cfg");
-                }
-            }
+            chunkifiedFile = ChunkifiedFile.CreateFile(commonConfigData.getFileName(), commonConfigData.getPieceSize(), commonConfigData.getFileSize());
         }
-        return cf;
+        return chunkifiedFile;
     }
 
-    private List<String> getPeerInfo() {
-        List<String> list = new ArrayList<String>();
-        try {
-            String line;
-            BufferedReader in = new BufferedReader(new FileReader(PEERINFO));
-
-            while((line = in.readLine()) != null){
-                list.add(line);
-            }
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return list;
+    // Collects all entries from PeerInfo.cfg that are above our entry in the list!
+    private List<PeerConfigData> getPeerConnList(){
+        return peerConfigDatas.subList(0,getSelfIndexInPeerConfigDataList());
     }
 
-    // Collects all entries from PeerInfo.cfg
-    private List<String> getPeerConnList(){
+    // Return ourself in the peer config list!
+    private PeerConfigData getPeerConfigDataForSelf() {
+        return peerConfigDatas.get(getSelfIndexInPeerConfigDataList());
+    }
 
-        List<String> list = this.getPeerInfo();
-
-        int i = 0;
-        boolean found = false;
-        List<String> result = new ArrayList<String>();
-
-        while(!found && i < list.size()) {
-            String [] lineArr = list.get(i).split(" ");
-
-            if(lineArr[0].equals(this.peerID)){
-                found = true;
-                result = list.subList(0,i);
+    // Return the index of our own entry in the peer config list!
+    private int getSelfIndexInPeerConfigDataList() {
+        for ( int i = 0; i != peerConfigDatas.size(); ++i ) {
+            if ( (""+peerConfigDatas.get(i).peerId).equals(this.peerID) ) {
+                return i;
             }
-            i++;
-        }
 
-        return result;
+        }
+        throw new IllegalArgumentException("Error, we are not listed in the peer config list!");
+
     }
 
     public ArrayList<ClientThread> getConnections() {
@@ -228,12 +215,102 @@ public class Peer {
         uninterested.mutateIntoUnInterested();
         for (ClientThread thread : connections) {
             if (!thread.isRemotePeerInteresting() ) {
+                thread.remotePeer.setInterested(false);
                 thread.sendMessage(uninterested);
             }
         }
     }
 
     public void informOfReceivedPiece(String peerID, int sizeOfPiece) {
-        // TODO: Andy
+        calcHighestUploadNeigbor.receivedNewPackageFromNeighbor(peerID,sizeOfPiece);
+
+
+    }
+
+    public void updateChokingAndUnchoking(){
+
+        //unchoking
+        time.scheduleAtFixedRate(new TimerTask() {
+            public void run(){
+                ArrayList<String> toUnchoke = calcHighestUploadNeigbor.getKBestUploaders(commonConfigData.getNumberPreferrredNeighbors()); //get k specified from file
+                System.out.println("Inside first scheduled task");
+                //tell them to unchoke list
+                Message unchoke = new Message();
+                unchoke.mutateIntoUnChoke();
+                Message choke = new Message();
+                choke.mutateIntoChoke();
+
+                for(ClientThread thread : connections){
+                    boolean wasUnchoked = false;
+                    for(String unc : toUnchoke){
+                        if(thread.remotePeer.getPeerID().equals(unc)){
+                            wasUnchoked = true;
+                            try{
+                                thread.sendMessage(unchoke);
+                                thread.remotePeer.setChoked(false);
+
+                            }
+                            catch(Exception e){
+                                System.out.println("Failed to send unchoke.");
+                            }
+                        }
+                    }
+                    if(!wasUnchoked){
+
+                        try {
+                            thread.sendMessage(choke);
+                            thread.remotePeer.setChoked(true);
+                        }
+                        catch(Exception e){
+                            System.out.println("Failed to send choke");
+                        }
+                    }
+                }
+                //choke the rest
+
+                //clears out map.
+                calcHighestUploadNeigbor.clear();
+            }
+
+        }, commonConfigData.getUnchokeInterval()*1000,commonConfigData.getUnchokeInterval()*1000);   //replace this hardcoded number with fileSpecifiedNum
+
+        //optimistically unchoking
+        //every m seconds
+        //if peer is interested AND choked,
+        //unchoke RANDOM peer from those that meet criteria
+        time.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                ArrayList <ClientThread> possibleUnchoking = new ArrayList<ClientThread>();
+                System.out.println("Inside second scheduled task");
+                for (ClientThread thread : connections) {
+                    if (thread.remotePeer.getChoked() && thread.remotePeer.getInterested() ) {
+                        //add to list
+                        possibleUnchoking.add(thread);
+                    }
+                }
+
+                //randomly choose 1 to unchoke
+                Random randomGenerator = new Random();
+
+                //peer sends out unchoke message
+                System.out.println("Size of possibleUnchoking:" + possibleUnchoking.size());
+                if(possibleUnchoking.size() != 0) {
+                    int unchokeIndex = randomGenerator.nextInt(possibleUnchoking.size());
+                    possibleUnchoking.get(unchokeIndex).remotePeer.setChoked(false);
+                    Message unchoke = new Message();
+                    unchoke.mutateIntoUnChoke();
+                    //I have no idea why it forced me to put it into a try/catch
+                    // Because sending a message can fail if the network fails.
+                    try {
+                        possibleUnchoking.get(unchokeIndex).sendMessage(unchoke);
+                    } catch (IOException e) {
+                        System.out.println("Could not send unchoking message in updateChokingUnchoking");
+                    }
+                }
+                // Do not clear the map for this one actually, we aren't using the map here!
+                // We only clear the map when we pick based on upload rate.
+            }
+        }, commonConfigData.getOptimisticUnchokeInterval()*1000,commonConfigData.getOptimisticUnchokeInterval()*1000);           //replace this hardcoded number with fileSpecifiedNum
     }
 }

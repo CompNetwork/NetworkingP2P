@@ -239,18 +239,11 @@ public class Peer {
                 unchoke.mutateIntoUnChoke();
                 Message choke = new Message();
                 choke.mutateIntoChoke();
-                /*for(String unc : toUnchoke){
-                    for(ClientThread thread : connections){
-                        if(thread.remotePeer.getPeerID() == unc){
 
-                        }
-                    }
-
-                }*/
                 for(ClientThread thread : connections){
                     boolean wasUnchoked = false;
                     for(String unc : toUnchoke){
-                        if(thread.remotePeer.getPeerID()== unc){
+                        if(thread.remotePeer.getPeerID().equals(unc)){
                             wasUnchoked = true;
                             try{
                                 thread.sendMessage(unchoke);

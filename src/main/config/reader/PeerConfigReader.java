@@ -9,7 +9,8 @@ import java.util.Scanner;
 
 public class PeerConfigReader {
     ArrayList<PeerConfigData> data = new ArrayList<>();
-    ArrayList<PeerConfigData> getPeerConfigDatas() {
+
+    public ArrayList<PeerConfigData> getPeerConfigDatas() {
         return data;
     }
 
@@ -67,7 +68,7 @@ public class PeerConfigReader {
     }
 
     // Throws either FileNotFound if the file doesn't exist, or IllegalArgumentException if the file is formatted incorrectly.
-    PeerConfigReader(File configFile) throws FileNotFoundException, IllegalArgumentException {
+    public PeerConfigReader(File configFile) throws FileNotFoundException, IllegalArgumentException {
         // Perform the read and parse.
         Scanner sc = new Scanner(configFile);
         for(int currentLineIdx = 0; sc.hasNext();++currentLineIdx) {

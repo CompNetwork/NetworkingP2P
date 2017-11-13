@@ -2,6 +2,10 @@ package main.hosts;
 
 // Holds the info of a remote peer.
 // All we care about is the ID, and the files it has.
+// All fields in here are in the context of the remote peer.
+// AKA, choked is are we choking the remote peer?
+// AKA, interested is are we interested in the remote peer?
+// Bitset is the remote peers bitset
 public class RemotePeer {
     public static final String NO_PEER_ID_YET = "-1";
 

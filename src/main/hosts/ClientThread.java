@@ -11,6 +11,7 @@ import java.io.*;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.Set;
 
 
 public class ClientThread extends Thread {
@@ -25,6 +26,12 @@ public class ClientThread extends Thread {
     OutputStream output =  null;
 
     private boolean finHandshake;
+
+    // Is the remote peer interested in us?
+    // Are we choked by the remote peer?
+    private boolean interested = false;
+    private boolean choked = true;
+    private Set<Integer> requestedIndexes;
 
     public ClientThread(Socket socket, Peer localPeer, RemotePeer remotePeer) throws IOException {
         this.socket = socket;
@@ -75,15 +82,19 @@ public class ClientThread extends Thread {
                 break;
             case MessageTypeConstants.CHOKE :
                 System.out.println("Received Choke");
+                this.choked = true;
                 break;
             case MessageTypeConstants.UNCHOKE:
                 System.out.println("Received Unchoke");
+                this.choked = false;
                 break;
             case MessageTypeConstants.INTERESTED:
                 System.out.println("Received Interested");
+                this.interested = true;
                 break;
             case MessageTypeConstants.UNINTERESTED:
                 System.out.println("Received Not Interested");
+                this.interested = false;
                 break;
             case MessageTypeConstants.HAVE:
                 System.out.println("Received Have");
@@ -95,6 +106,8 @@ public class ClientThread extends Thread {
                 break;
             case MessageTypeConstants.REQUEST:
                 System.out.println("Received Request");
+                // Add the index to the indexes that have been requested of us!
+                requestedIndexes.add(message.getIndexPayload());
                 break;
             case MessageTypeConstants.PIECE:
                 System.out.println("Received Piece");

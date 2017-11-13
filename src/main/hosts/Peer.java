@@ -301,17 +301,15 @@ public class Peer {
                     Message unchoke = new Message();
                     unchoke.mutateIntoUnChoke();
                     //I have no idea why it forced me to put it into a try/catch
+                    // Because sending a message can fail if the network fails.
                     try {
                         possibleUnchoking.get(unchokeIndex).sendMessage(unchoke);
-                    } catch (Exception e) {
+                    } catch (IOException e) {
                         System.out.println("Could not send unchoking message in updateChokingUnchoking");
                     }
                 }
-
-                //expects request back
-                //???
-
-                calcHighestUploadNeigbor.clear();
+                // Do not clear the map for this one actually, we aren't using the map here!
+                // We only clear the map when we pick based on upload rate.
             }
         }, commonConfigData.getOptimisticUnchokeInterval()*1000,commonConfigData.getOptimisticUnchokeInterval()*1000);           //replace this hardcoded number with fileSpecifiedNum
     }

@@ -32,8 +32,11 @@ public class Peer {
     private Timer time;
     private CalculateHighestUploadingNeighbors calcHighestUploadNeigbor;
     private ArrayList<PeerConfigData> peerConfigDatas;
+    CommonConfigData commonConfigData = null;
 
     public Peer(String peerID, String hostname, int port) throws FileNotFoundException {
+
+        initCommonConfig();
         PeerConfigReader peerConfigReader = new PeerConfigReader(new File(PEERINFO));
         this.peerConfigDatas = peerConfigReader.getPeerConfigDatas();
         this.peerID = peerID;
@@ -45,6 +48,16 @@ public class Peer {
         this.time = new Timer();
         // Read the config file, parse andstore the data.
         this.calcHighestUploadNeigbor = new CalculateHighestUploadingNeighbors(getAllOtherPeers());
+    }
+
+    private void initCommonConfig() {
+        CommonConfigReader commonConfigReader = null;
+        try {
+            commonConfigReader = new CommonConfigReader(new File(FILEPATH));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        commonConfigData = commonConfigReader.getData();
     }
 
     private List<String> getAllOtherPeers() {
@@ -127,22 +140,13 @@ public class Peer {
 
 
         PeerConfigData self = this.getPeerConfigDataForSelf();
-        CommonConfigReader commonConfig = null;
         ChunkifiedFile chunkifiedFile = null;
-        try {
-            commonConfig = new CommonConfigReader(new File(FILEPATH));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        CommonConfigData data = commonConfig.getData();
-
         // Sets the Chunkified File data if this localPeer has the file
         if (self.hasFileOrNot) {
-            chunkifiedFile = ChunkifiedFile.GetFromExisingFile(data.getFileName(), data.getPieceSize(), data.getFileSize());
+            chunkifiedFile = ChunkifiedFile.GetFromExisingFile(commonConfigData.getFileName(), commonConfigData.getPieceSize(), commonConfigData.getFileSize());
         } else {
 
-            chunkifiedFile = ChunkifiedFile.CreateFile(data.getFileName(), data.getPieceSize(), data.getFileSize());
+            chunkifiedFile = ChunkifiedFile.CreateFile(commonConfigData.getFileName(), commonConfigData.getPieceSize(), commonConfigData.getFileSize());
         }
         return chunkifiedFile;
     }
@@ -228,8 +232,7 @@ public class Peer {
         //unchoking
         time.scheduleAtFixedRate(new TimerTask() {
             public void run(){
-
-                ArrayList<String> toUnchoke = calcHighestUploadNeigbor.getKBestUploaders(2);            //get k specified from file //TODO GRAB FROM FILE
+                ArrayList<String> toUnchoke = calcHighestUploadNeigbor.getKBestUploaders(commonConfigData.getNumberPreferrredNeighbors()); //get k specified from file
                 System.out.println("Inside first scheduled task");
                 //tell them to unchoke list
                 Message unchoke = new Message();
@@ -276,7 +279,7 @@ public class Peer {
                 calcHighestUploadNeigbor.clear();
             }
 
-        }, 8000,8000);   //replace this hardcoded number with fileSpecifiedNum TODO GRAB FROM FILE
+        }, commonConfigData.getUnchokeInterval()*1000,commonConfigData.getUnchokeInterval()*1000);   //replace this hardcoded number with fileSpecifiedNum
 
         //optimistically unchoking
         //every m seconds
@@ -317,6 +320,6 @@ public class Peer {
 
                 calcHighestUploadNeigbor.clear();
             }
-        }, 15000,15000);           //replace this hardcoded number with fileSpecifiedNum
+        }, commonConfigData.getOptimisticUnchokeInterval()*1000,commonConfigData.getOptimisticUnchokeInterval()*1000);           //replace this hardcoded number with fileSpecifiedNum
     }
 }

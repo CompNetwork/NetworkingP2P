@@ -87,25 +87,21 @@ public class ClientThread extends Thread {
 
                 handleChoke();
                 System.out.println("Received Choke");
-                //this.choked = true;
                 break;
             case MessageTypeConstants.UNCHOKE:
 
                 handleUnchoke();
                 System.out.println("Received Unchoke");
-                //this.choked = false;
                 break;
             case MessageTypeConstants.INTERESTED:
 
                 handleInterested();
                 System.out.println("Received Interested");
-                //this.interested = true;
                 break;
             case MessageTypeConstants.UNINTERESTED:
 
                 handleNotInterested();
                 System.out.println("Received Not Interested");
-                //this.interested = false;
                 break;
             case MessageTypeConstants.HAVE:
 
@@ -162,7 +158,7 @@ public class ClientThread extends Thread {
     // Actual Message #0 outgoing
     // Mutates the parameter given
     private void sendChoke(Message m) throws IOException {
-        this.choked = true;
+        this.remotePeer.setChoked(true);;
         m.mutateIntoChoke();
         this.sendMessage(m);
     }
@@ -175,6 +171,7 @@ public class ClientThread extends Thread {
     // Actual Message #1 outgoing
     // Mutates the parameter given
     private void sendUnchoke(Message m) throws IOException {
+        this.remotePeer.setChoked(false);;
         m.mutateIntoUnChoke();
         this.sendMessage(m);
     }

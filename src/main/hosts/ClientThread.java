@@ -8,7 +8,9 @@ import main.messsage.Message;
 import main.messsage.MessageTypeConstants;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.Set;
@@ -77,41 +79,53 @@ public class ClientThread extends Thread {
 
         switch ( type ) {
             case MessageTypeConstants.HANDSHAKE :
+
                 completeHandShake(message);
                 System.out.println("Received Handshake");
                 break;
             case MessageTypeConstants.CHOKE :
+
+                handleChoke();
                 System.out.println("Received Choke");
-                this.choked = true;
+                //this.choked = true;
                 break;
             case MessageTypeConstants.UNCHOKE:
+
+                handleUnchoke();
                 System.out.println("Received Unchoke");
-                this.choked = false;
+                //this.choked = false;
                 break;
             case MessageTypeConstants.INTERESTED:
+
+                handleInterested();
                 System.out.println("Received Interested");
-                this.interested = true;
+                //this.interested = true;
                 break;
             case MessageTypeConstants.UNINTERESTED:
+
+                handleNotInterested();
                 System.out.println("Received Not Interested");
-                this.interested = false;
+                //this.interested = false;
                 break;
             case MessageTypeConstants.HAVE:
-                System.out.println("Received Have");
+
                 handleHave(message);
+                System.out.println("Received Have");
                 break;
             case MessageTypeConstants.BITFIELD:
+
                 handleBitField(message);
                 System.out.println("Received Bitfield");
                 break;
             case MessageTypeConstants.REQUEST:
+
+                handleRequest(message);
                 System.out.println("Received Request");
-                // Add the index to the indexes that have been requested of us!
-                requestedIndexes.add(message.getIndexPayload());
                 break;
             case MessageTypeConstants.PIECE:
-                System.out.println("Received Piece");
+
                 this.handlePiece(message);
+                System.out.println("Received Piece");
                 break;
             default:
                 System.out.print("Received Unknown Message Type");
@@ -135,33 +149,28 @@ public class ClientThread extends Thread {
         }
     }
 
+    /************** Getter/Setters *******************/
+
     private void setFinHandshake(boolean finHandshake) { this.finHandshake = finHandshake; }
 
     private boolean getFinHandshake() { return finHandshake; }
 
+    public Peer getLocalPeer() { return localPeer; }
+
     /*************** Protocol Methods ****************/
     
-    private void initHandshake() throws IOException {
-        setFinHandshake(false);
-        message = Message.createHandShakeMessageFromPeerId(this.localPeer.getPeerID());
-        this.sendMessage(message);
-    }
-
-    private void completeHandShake(Message m) throws IOException {
-        String peerID = m.getPeerIdPayload();
-        this.remotePeer.setPeerId(peerID);
-        sendBitField(peerID,m);
-    }
-
     // Actual Message #0 outgoing
     // Mutates the parameter given
     private void sendChoke(Message m) throws IOException {
+        this.choked = true;
         m.mutateIntoChoke();
         this.sendMessage(m);
     }
 
     // Actual Message #0 incoming
-    private void handleChoke(Message message) { }
+    private void handleChoke() {
+        this.choked = true;
+    }
 
     // Actual Message #1 outgoing
     // Mutates the parameter given
@@ -171,7 +180,9 @@ public class ClientThread extends Thread {
     }
 
     // Actual Message #1 incoming
-    private void handleUnchoke(Message message) { }
+    private void handleUnchoke() {
+        this.choked = false;
+    }
 
     // Actual Message #2 outgoing
     // Mutates the parameter given
@@ -182,7 +193,9 @@ public class ClientThread extends Thread {
     }
 
     // Actual Message #2 incoming
-    private void handleInterested(Message message) { }
+    private void handleInterested() {
+        this.interested = true;
+    }
 
     // Actual Message #3 outgoing
     // Mutates the parameter given
@@ -193,13 +206,10 @@ public class ClientThread extends Thread {
 
     }
 
-    public void sendMessage(Message m) throws IOException {
-            output.write(m.getFull());
-            output.flush();
-    }
-
     // Actual Message #3 incoming
-    private void handleNotInterested(Message message) { }
+    private void handleNotInterested() {
+        this.interested = false;
+    }
 
     // Actual Message #4 outgoing
     // Mutates the parameter given
@@ -265,33 +275,44 @@ public class ClientThread extends Thread {
         } else {
             this.sendNotInterested(message);
         }
-
     }
 
     // Actual Message #6 outgoing
     // Mutates the parameter given
-    private void sendRequest(Message m, int payloadNotUsed) throws IOException {
+    // Selects a random index!
+    private void sendRequest(Message m) throws IOException {
 
-
-        /*TODO: if Unchoke */
-        //if(!RemotePeer.isChoke){
-            int [] missingChunksIndices = ChunkifiedFileUtilities.getIndexesOfBitsetAthatBitsetBDoesNotHave(this.remotePeer.getBitset(), this.localPeer.getChunky().AvailableChunks());
-            int payload = new Random().nextInt(missingChunksIndices.length);
-            m.mutateIntoRequest(payload);
+        if(!this.choked) {
+            // Careful with concurrency, we'll just lock on the global peer and allow only one request to be made at a time.
+            synchronized (this.getLocalPeer()) {
+                // Requests random chunk from set of chunks that I do not have
+                Set<Integer> requestedIndexes = getLocalPeer().getGloballyRequestedSet();
+                ArrayList<Integer> missingChunksIndices = ChunkifiedFileUtilities.getIndexesOfBitsetAthatBitsetBDoesNotHave(this.remotePeer.getBitset(), this.localPeer.getChunky().AvailableChunks());
+                missingChunksIndices.removeAll(requestedIndexes); // Remove all the requested indexes also!
+                // Pick and return a random index from the list of indexes we don't have - indexes requested!
+                int payload = missingChunksIndices.get(new Random().nextInt(missingChunksIndices.size()));
+                // Add the payload back in to the global requested indexes so it isn't double requested!
+                requestedIndexes.add(payload);
+                m.mutateIntoRequest(payload);
+            }
             this.sendMessage(m);
-        // }
+
+        }
 
     }
 
     // Actual Message #6 incoming
     private void handleRequest(Message message) throws IOException {
 
-        /*TODO: if Unchoke*/
+        if(!this.choked) {
             // Extracts piece from sent message
             int pieceIndex = message.getIndexPayload();
+            requestedIndexes.add(pieceIndex);
             // Updates message.type and payload
+            // TODO: Validate we have the piece as well!
             message.mutateIntoPiece(this.localPeer.getChunky().getChunk(pieceIndex), pieceIndex);
             sendMessage(message);
+        }
     }
 
     // Actual Message #7 outgoing
@@ -318,7 +339,24 @@ public class ClientThread extends Thread {
 
     }
 
-    public Peer getLocalPeer() { return localPeer; }
+    /*************** Protocol Helper Methods ****************/
+
+    public void sendMessage(Message m) throws IOException {
+        output.write(m.getFull());
+        output.flush();
+    }
+
+    private void initHandshake() throws IOException {
+        setFinHandshake(false);
+        message = Message.createHandShakeMessageFromPeerId(this.localPeer.getPeerID());
+        this.sendMessage(message);
+    }
+
+    private void completeHandShake(Message m) throws IOException {
+        String peerID = m.getPeerIdPayload();
+        this.remotePeer.setPeerId(peerID);
+        sendBitField(peerID,m);
+    }
 
     public boolean isRemotePeerInteresting() {
         // If remotePeer has a bit we do not, it is interesting.

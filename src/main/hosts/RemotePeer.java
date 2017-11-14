@@ -1,5 +1,8 @@
 package main.hosts;
 
+import java.util.HashSet;
+import java.util.Set;
+
 // Holds the info of a remote peer.
 // All we care about is the ID, and the files it has.
 // All fields in here are in the context of the remote peer.

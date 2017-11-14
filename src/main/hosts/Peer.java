@@ -32,6 +32,13 @@ public class Peer {
     private Timer time;
     private CalculateHighestUploadingNeighbors calcHighestUploadNeigbor;
     private ArrayList<PeerConfigData> peerConfigDatas;
+
+    public Set<Integer> getGloballyRequestedSet() {
+            return globallyRequestedSet;
+    }
+
+    // All the requests for pieces we've made to any peer!
+    private Set<Integer> globallyRequestedSet = new HashSet<>();
     CommonConfigData commonConfigData = null;
 
     public Peer(String peerID, String hostname, int port) throws FileNotFoundException {

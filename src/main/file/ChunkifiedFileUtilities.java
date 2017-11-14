@@ -51,7 +51,7 @@ public class ChunkifiedFileUtilities {
     // Bitset A and bitset B should be the same size.
     // Else illegal argument exception.
     // Otherwise, get the all the indexes for which bitset[A] is true, and bitset[B] is false.
-    public static int[] getIndexesOfBitsetAthatBitsetBDoesNotHave(boolean[] bitsetA, boolean[] bitsetB) {
+    public static ArrayList<Integer> getIndexesOfBitsetAthatBitsetBDoesNotHave(boolean[] bitsetA, boolean[] bitsetB) {
         if (bitsetA.length != bitsetB.length ) {
             throw new IllegalArgumentException("Error, the bitsets must be the same length!");
         }
@@ -65,12 +65,7 @@ public class ChunkifiedFileUtilities {
                 }
             }
         }
-
-        int[] result = new int[found.size()];
-        for ( int i = 0; i != found.size(); ++i ) {
-            result[i] = found.get(i);
-        }
-        return result;
+        return found;
     }
 
     public static String getStringFromBitSet(boolean[] bitset) {

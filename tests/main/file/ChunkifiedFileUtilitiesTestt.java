@@ -4,6 +4,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class ChunkifiedFileUtilitiesTestt {
 
@@ -43,7 +45,12 @@ public class ChunkifiedFileUtilitiesTestt {
         boolean[] bitsetA = { true, false, true};
         boolean[] bitsetB = { true, true, false};
         int[] expected = {2};
-        Assert.assertArrayEquals(expected,ChunkifiedFileUtilities.getIndexesOfBitsetAthatBitsetBDoesNotHave(bitsetA,bitsetB));
+        ArrayList<Integer> found = ChunkifiedFileUtilities.getIndexesOfBitsetAthatBitsetBDoesNotHave(bitsetA,bitsetB);
+        int[] foundArray = new int[found.size()];
+        for ( int i = 0; i != found.size(); ++i ) {
+            foundArray[i] = found.get(i);
+        }
+        Assert.assertArrayEquals(expected,foundArray);
     }
 
     @Test
@@ -51,7 +58,12 @@ public class ChunkifiedFileUtilitiesTestt {
         boolean[] bitsetA = { true, false, false};
         boolean[] bitsetB = { true, true, false};
         int[] expected = {};
-        Assert.assertArrayEquals(expected,ChunkifiedFileUtilities.getIndexesOfBitsetAthatBitsetBDoesNotHave(bitsetA,bitsetB));
+        ArrayList<Integer> found = ChunkifiedFileUtilities.getIndexesOfBitsetAthatBitsetBDoesNotHave(bitsetA,bitsetB);
+        int[] foundArray = new int[found.size()];
+        for ( int i = 0; i != found.size(); ++i ) {
+            foundArray[i] = found.get(i);
+        }
+        Assert.assertArrayEquals(expected,foundArray);
     }
 
     @Test

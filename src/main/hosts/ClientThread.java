@@ -8,7 +8,9 @@ import main.messsage.Message;
 import main.messsage.MessageTypeConstants;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.Set;
@@ -277,16 +279,24 @@ public class ClientThread extends Thread {
 
     // Actual Message #6 outgoing
     // Mutates the parameter given
-    private void sendRequest(Message m, int payloadNotUsed) throws IOException {
+    // Selects a random index!
+    private void sendRequest(Message m) throws IOException {
 
         if(!this.choked) {
-            // Add the index to the indexes that have been requested of us!
-            requestedIndexes.add(message.getIndexPayload());
-            // Requests random chunk from set of chunks that I do not have
-            int [] missingChunksIndices = ChunkifiedFileUtilities.getIndexesOfBitsetAthatBitsetBDoesNotHave(this.remotePeer.getBitset(), this.localPeer.getChunky().AvailableChunks());
-            int payload = new Random().nextInt(missingChunksIndices.length);
-            m.mutateIntoRequest(payload);
+            // Careful with concurrency, we'll just lock on the global peer and allow only one request to be made at a time.
+            synchronized (this.getLocalPeer()) {
+                // Requests random chunk from set of chunks that I do not have
+                Set<Integer> requestedIndexes = getLocalPeer().getGloballyRequestedSet();
+                ArrayList<Integer> missingChunksIndices = ChunkifiedFileUtilities.getIndexesOfBitsetAthatBitsetBDoesNotHave(this.remotePeer.getBitset(), this.localPeer.getChunky().AvailableChunks());
+                missingChunksIndices.removeAll(requestedIndexes); // Remove all the requested indexes also!
+                // Pick and return a random index from the list of indexes we don't have - indexes requested!
+                int payload = missingChunksIndices.get(new Random().nextInt(missingChunksIndices.size()));
+                // Add the payload back in to the global requested indexes so it isn't double requested!
+                requestedIndexes.add(payload);
+                m.mutateIntoRequest(payload);
+            }
             this.sendMessage(m);
+
         }
 
     }
@@ -297,7 +307,9 @@ public class ClientThread extends Thread {
         if(!this.choked) {
             // Extracts piece from sent message
             int pieceIndex = message.getIndexPayload();
+            requestedIndexes.add(pieceIndex);
             // Updates message.type and payload
+            // TODO: Validate we have the piece as well!
             message.mutateIntoPiece(this.localPeer.getChunky().getChunk(pieceIndex), pieceIndex);
             sendMessage(message);
         }

@@ -4,12 +4,15 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class CalculateHighestUploadingNeighborsTest {
     CalculateHighestUploadingNeighbors calculateHighestUploadingNeighbors = null;
     ArrayList<String> kHighest;
     public void createCalculateHighestUploadingNeighbors() {
-        calculateHighestUploadingNeighbors = new CalculateHighestUploadingNeighbors();
+        List<String> peers = Arrays.asList(new String[]{});
+        calculateHighestUploadingNeighbors = new CalculateHighestUploadingNeighbors(peers);
     }
 
     public void addPeer(String peer, int value) {
@@ -26,6 +29,16 @@ public class CalculateHighestUploadingNeighborsTest {
         createCalculateHighestUploadingNeighbors();
         addPeer("baz",1);
         calculateHighestUploadingNeighbors.receivedNewPackageFromNeighbor("baz", 1);
+    }
+
+    @Test
+    public void clearDoesnotRemoveKeys() {
+        startWithTwoPeers();
+        calculateHighestUploadingNeighbors.clear();
+        kHighest = calculateHighestUploadingNeighbors.getKBestUploaders(2);
+        Assert.assertEquals(kHighest.size(), 2);
+        Assert.assertTrue(kHighest.contains("bar"));
+        Assert.assertTrue(kHighest.contains("foo"));
     }
 
     // Test the happy cases

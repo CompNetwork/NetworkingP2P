@@ -11,6 +11,7 @@ import java.io.*;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.Set;
 
 
 public class ClientThread extends Thread {
@@ -25,6 +26,12 @@ public class ClientThread extends Thread {
     OutputStream output =  null;
 
     private boolean finHandshake;
+
+    // Is the remote peer interested in us?
+    // Are we choked by the remote peer?
+    private boolean interested = false;
+    private boolean choked = true;
+    private Set<Integer> requestedIndexes;
 
     public ClientThread(Socket socket, Peer localPeer, RemotePeer remotePeer) throws IOException {
         this.socket = socket;
@@ -71,37 +78,43 @@ public class ClientThread extends Thread {
         switch ( type ) {
             case MessageTypeConstants.HANDSHAKE :
                 completeHandShake(message);
-                System.out.println("Handshake");
+                System.out.println("Received Handshake");
                 break;
             case MessageTypeConstants.CHOKE :
-                System.out.println("Choke");
+                System.out.println("Received Choke");
+                this.choked = true;
                 break;
             case MessageTypeConstants.UNCHOKE:
-                System.out.println("Unchoke");
+                System.out.println("Received Unchoke");
+                this.choked = false;
                 break;
             case MessageTypeConstants.INTERESTED:
-                System.out.println("Interested");
+                System.out.println("Received Interested");
+                this.interested = true;
                 break;
             case MessageTypeConstants.UNINTERESTED:
-                System.out.println("Not Interested");
+                System.out.println("Received Not Interested");
+                this.interested = false;
                 break;
             case MessageTypeConstants.HAVE:
-                System.out.println("Have");
+                System.out.println("Received Have");
                 handleHave(message);
                 break;
             case MessageTypeConstants.BITFIELD:
                 handleBitField(message);
-                System.out.println("Bitfield");
+                System.out.println("Received Bitfield");
                 break;
             case MessageTypeConstants.REQUEST:
-                System.out.println("Request");
+                System.out.println("Received Request");
+                // Add the index to the indexes that have been requested of us!
+                requestedIndexes.add(message.getIndexPayload());
                 break;
             case MessageTypeConstants.PIECE:
-                System.out.println("Piece");
+                System.out.println("Received Piece");
                 this.handlePiece(message);
                 break;
             default:
-                System.out.print("Unknown Message Type");
+                System.out.print("Received Unknown Message Type");
         }
     }
 
@@ -163,7 +176,8 @@ public class ClientThread extends Thread {
     // Actual Message #2 outgoing
     // Mutates the parameter given
     private void sendInterested(Message m) throws IOException {
-        m.mutateIntoUnInterested();
+        m.mutateIntoInterested();
+        remotePeer.setInterested(true);
         sendMessage(m);
     }
 
@@ -174,6 +188,7 @@ public class ClientThread extends Thread {
     // Mutates the parameter given
     private void sendNotInterested(Message m) throws IOException {
         m.mutateIntoUnInterested();
+        remotePeer.setInterested(false);
         sendMessage(m);
 
     }
@@ -212,7 +227,8 @@ public class ClientThread extends Thread {
         if ( !this.getLocalPeer().getChunky().hasChunk(chunkIndex) ) {
             // If we don't have this chunk, then we are interested!
             System.out.println("Sending interested message, as we don't have!");
-            sendInterestedMessageToRemotePeer(message);
+            sendInterested(message);
+            this.remotePeer.setInterested(true);
         }
     }
 
@@ -234,11 +250,6 @@ public class ClientThread extends Thread {
         }
     }
 
-    private void sendInterestedMessageToRemotePeer(Message m) throws IOException {
-        m.mutateIntoInterested();
-        this.sendMessage(m);
-    }
-
     // Actual Message #5 incoming
     // Mutates the parameter given
     private void handleBitField(Message message) throws IOException {
@@ -247,7 +258,9 @@ public class ClientThread extends Thread {
         // Evaluate whether interested or not
         // If the remote peer has a chunk we do not, we are interested!
         // Otherwise, inform the peer we are not interested!
-        if (this.isRemotePeerInteresting()) {
+        this.remotePeer.setInterested(this.isRemotePeerInteresting());
+        System.out.println("We found the peers file to be interesting, yay or nay?: " + this.isRemotePeerInteresting());
+        if (this.remotePeer.getInterested()) {
             this.sendInterested(message);
         } else {
             this.sendNotInterested(message);

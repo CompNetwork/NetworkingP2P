@@ -90,7 +90,7 @@ public class ClientThread extends Thread {
                 break;
             case MessageTypeConstants.UNCHOKE:
 
-                handleUnchoke();
+                handleUnchoke(message);
                 System.out.println("Received Unchoke");
                 break;
             case MessageTypeConstants.INTERESTED:
@@ -158,7 +158,7 @@ public class ClientThread extends Thread {
     // Actual Message #0 outgoing
     // Mutates the parameter given
     private void sendChoke(Message m) throws IOException {
-        this.remotePeer.setChoked(true);;
+        this.remotePeer.setChoked(true);
         m.mutateIntoChoke();
         this.sendMessage(m);
     }
@@ -177,8 +177,10 @@ public class ClientThread extends Thread {
     }
 
     // Actual Message #1 incoming
-    private void handleUnchoke() {
+    private void handleUnchoke(Message m) throws IOException {
+
         this.choked = false;
+        sendRequest(m);
     }
 
     // Actual Message #2 outgoing
@@ -279,7 +281,7 @@ public class ClientThread extends Thread {
     // Selects a random index!
     private void sendRequest(Message m) throws IOException {
 
-        if(!this.choked) {
+        if(!this.choked && !remotePeer.getChoked()) {
             // Careful with concurrency, we'll just lock on the global peer and allow only one request to be made at a time.
             synchronized (this.getLocalPeer()) {
                 // Requests random chunk from set of chunks that I do not have
@@ -301,11 +303,12 @@ public class ClientThread extends Thread {
     // Actual Message #6 incoming
     private void handleRequest(Message message) throws IOException {
 
-        if(!this.choked) {
+        if(!this.choked && !remotePeer.getChoked()) {
             // Extracts piece from sent message
             int pieceIndex = message.getIndexPayload();
             requestedIndexes.add(pieceIndex);
             // Updates message.type and payload
+            // FIXME: Can take the logic below and call sendPiece or leave it here
             // TODO: Validate we have the piece as well!
             message.mutateIntoPiece(this.localPeer.getChunky().getChunk(pieceIndex), pieceIndex);
             sendMessage(message);
@@ -314,6 +317,7 @@ public class ClientThread extends Thread {
 
     // Actual Message #7 outgoing
     // Mutates the parameter given
+    // FIXME:This logic is taken care of in handleRequest(...).
     private void sendPiece(FileChunk chunk, int index, Message m) throws IOException {
         m.mutateIntoPiece(chunk,index);
         this.sendMessage(m);

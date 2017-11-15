@@ -10,10 +10,7 @@ import main.messsage.MessageTypeConstants;
 import java.io.*;
 import java.lang.reflect.Array;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 
 public class ClientThread extends Thread {
@@ -33,7 +30,7 @@ public class ClientThread extends Thread {
     // Are we choked by the remote peer?
     private boolean interested = false;
     private boolean choked = true;
-    private Set<Integer> requestedIndexes;
+    private Set<Integer> requestedIndexes = new HashSet<>();
 
     public ClientThread(Socket socket, Peer localPeer, RemotePeer remotePeer) throws IOException {
         this.socket = socket;
@@ -181,7 +178,11 @@ public class ClientThread extends Thread {
 
         this.choked = false;
         // if I need pieces sendRequest
-        if(this.localPeer.getChunky().hasAllChunks()) {
+        // TODO: This should happen repeatedly, not just one piece per interval!
+        // We need to send more requests
+        // Also, what if we make a request, and then get choked?
+        // We need to remove that request from the quque.
+        if(!this.localPeer.getChunky().hasAllChunks()) {
             sendRequest(m);
         }
     }
@@ -292,11 +293,16 @@ public class ClientThread extends Thread {
                 ArrayList<Integer> missingChunksIndices = ChunkifiedFileUtilities.getIndexesOfBitsetAthatBitsetBDoesNotHave(this.remotePeer.getBitset(), this.localPeer.getChunky().AvailableChunks());
                 missingChunksIndices.removeAll(requestedIndexes); // Remove all the requested indexes also!
                 // Pick and return a random index from the list of indexes we don't have - indexes requested!
+                if ( missingChunksIndices.size() == 0 ) {
+                    System.err.println("We have nothing to request, but are trying to for some reason!");
+                    return;
+                }
                 int payload = missingChunksIndices.get(new Random().nextInt(missingChunksIndices.size()));
                 // Add the payload back in to the global requested indexes so it isn't double requested!
                 requestedIndexes.add(payload);
                 m.mutateIntoRequest(payload);
             }
+            System.out.println("Sending request");
             this.sendMessage(m);
 
         }

@@ -10,10 +10,7 @@ import main.messsage.MessageTypeConstants;
 import java.io.*;
 import java.lang.reflect.Array;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 
 public class ClientThread extends Thread {
@@ -33,7 +30,7 @@ public class ClientThread extends Thread {
     // Are we choked by the remote peer?
     private boolean interested = false;
     private boolean choked = true;
-    private Set<Integer> requestedIndexes;
+    private Set<Integer> requestedIndexes = new HashSet<>();
 
     public ClientThread(Socket socket, Peer localPeer, RemotePeer remotePeer) throws IOException {
         this.socket = socket;
@@ -87,25 +84,21 @@ public class ClientThread extends Thread {
 
                 handleChoke();
                 System.out.println("Received Choke");
-                //this.choked = true;
                 break;
             case MessageTypeConstants.UNCHOKE:
 
-                handleUnchoke();
+                handleUnchoke(message);
                 System.out.println("Received Unchoke");
-                //this.choked = false;
                 break;
             case MessageTypeConstants.INTERESTED:
 
                 handleInterested();
                 System.out.println("Received Interested");
-                //this.interested = true;
                 break;
             case MessageTypeConstants.UNINTERESTED:
 
                 handleNotInterested();
                 System.out.println("Received Not Interested");
-                //this.interested = false;
                 break;
             case MessageTypeConstants.HAVE:
 
@@ -162,7 +155,7 @@ public class ClientThread extends Thread {
     // Actual Message #0 outgoing
     // Mutates the parameter given
     private void sendChoke(Message m) throws IOException {
-        this.choked = true;
+        this.remotePeer.setChoked(true);
         m.mutateIntoChoke();
         this.sendMessage(m);
     }
@@ -175,13 +168,23 @@ public class ClientThread extends Thread {
     // Actual Message #1 outgoing
     // Mutates the parameter given
     private void sendUnchoke(Message m) throws IOException {
+        this.remotePeer.setChoked(false);;
         m.mutateIntoUnChoke();
         this.sendMessage(m);
     }
 
     // Actual Message #1 incoming
-    private void handleUnchoke() {
+    private void handleUnchoke(Message m) throws IOException {
+
         this.choked = false;
+        // if I need pieces sendRequest
+        // TODO: This should happen repeatedly, not just one piece per interval!
+        // We need to send more requests
+        // Also, what if we make a request, and then get choked?
+        // We need to remove that request from the quque.
+        if(!this.localPeer.getChunky().hasAllChunks()) {
+            sendRequest(m);
+        }
     }
 
     // Actual Message #2 outgoing
@@ -282,7 +285,7 @@ public class ClientThread extends Thread {
     // Selects a random index!
     private void sendRequest(Message m) throws IOException {
 
-        if(!this.choked) {
+        if(!this.choked && !remotePeer.getChoked()) {
             // Careful with concurrency, we'll just lock on the global peer and allow only one request to be made at a time.
             synchronized (this.getLocalPeer()) {
                 // Requests random chunk from set of chunks that I do not have
@@ -290,11 +293,16 @@ public class ClientThread extends Thread {
                 ArrayList<Integer> missingChunksIndices = ChunkifiedFileUtilities.getIndexesOfBitsetAthatBitsetBDoesNotHave(this.remotePeer.getBitset(), this.localPeer.getChunky().AvailableChunks());
                 missingChunksIndices.removeAll(requestedIndexes); // Remove all the requested indexes also!
                 // Pick and return a random index from the list of indexes we don't have - indexes requested!
+                if ( missingChunksIndices.size() == 0 ) {
+                    System.err.println("We have nothing to request, but are trying to for some reason!");
+                    return;
+                }
                 int payload = missingChunksIndices.get(new Random().nextInt(missingChunksIndices.size()));
                 // Add the payload back in to the global requested indexes so it isn't double requested!
                 requestedIndexes.add(payload);
                 m.mutateIntoRequest(payload);
             }
+            System.out.println("Sending request");
             this.sendMessage(m);
 
         }
@@ -304,11 +312,12 @@ public class ClientThread extends Thread {
     // Actual Message #6 incoming
     private void handleRequest(Message message) throws IOException {
 
-        if(!this.choked) {
+        if(!this.choked && !remotePeer.getChoked()) {
             // Extracts piece from sent message
             int pieceIndex = message.getIndexPayload();
             requestedIndexes.add(pieceIndex);
             // Updates message.type and payload
+            // FIXME: Can take the logic below and call sendPiece or leave it here
             // TODO: Validate we have the piece as well!
             message.mutateIntoPiece(this.localPeer.getChunky().getChunk(pieceIndex), pieceIndex);
             sendMessage(message);
@@ -317,6 +326,7 @@ public class ClientThread extends Thread {
 
     // Actual Message #7 outgoing
     // Mutates the parameter given
+    // FIXME:This logic is taken care of in handleRequest(...).
     private void sendPiece(FileChunk chunk, int index, Message m) throws IOException {
         m.mutateIntoPiece(chunk,index);
         this.sendMessage(m);

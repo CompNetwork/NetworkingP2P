@@ -180,7 +180,11 @@ public class ClientThread extends Thread {
     private void handleUnchoke(Message m) throws IOException {
 
         this.choked = false;
-        sendRequest(m);
+        // if I need pieces sendRequest
+       // if(this.localPeer.getChunky().AvailableChunks()){
+
+            sendRequest(m);
+       // }
     }
 
     // Actual Message #2 outgoing

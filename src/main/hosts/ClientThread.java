@@ -181,10 +181,9 @@ public class ClientThread extends Thread {
 
         this.choked = false;
         // if I need pieces sendRequest
-       // if(this.localPeer.getChunky().AvailableChunks()){
-
+        if(this.localPeer.getChunky().hasAllChunks()) {
             sendRequest(m);
-       // }
+        }
     }
 
     // Actual Message #2 outgoing

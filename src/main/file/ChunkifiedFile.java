@@ -145,4 +145,17 @@ public class ChunkifiedFile {
 
     // Chunks that are 1 are currently on the disk, chunks that are 0 are not available.
     public boolean[] AvailableChunks() { return bitset; }
+
+    public boolean hasAllChunks() {
+
+        boolean status = true;
+        for (int i = 0; i != this.getChunkCount(); ++i) {
+
+            if (!this.hasChunk(i)) {
+                status = false;
+                break;
+            }
+        }
+        return status;
+    }
 }

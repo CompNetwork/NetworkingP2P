@@ -32,6 +32,8 @@ public class Peer {
     private Timer time;
     private CalculateHighestUploadingNeighbors calcHighestUploadNeigbor;
     private ArrayList<PeerConfigData> peerConfigDatas;
+    private String neighborList;
+    private int numberOfPiecesObtained;
 
     public Set<Integer> getGloballyRequestedSet() {
             return globallyRequestedSet;
@@ -55,6 +57,7 @@ public class Peer {
         this.time = new Timer();
         // Read the config file, parse andstore the data.
         this.calcHighestUploadNeigbor = new CalculateHighestUploadingNeighbors(getAllOtherPeers());
+        this.numberOfPiecesObtained = 0;
     }
 
     private void initCommonConfig() {
@@ -128,6 +131,7 @@ public class Peer {
                 RemotePeer remotePeer = new RemotePeer(RemotePeer.NO_PEER_ID_YET,chunky.getChunkCount());
                 ClientThread ct = new ClientThread(s, this, remotePeer);
                 ct.start();
+                logger.acceptConnectionLog(this.peerID,remotePeer.getPeerID());
                 this.connections.add(ct);
             }
         } catch (IOException e) {
@@ -242,6 +246,7 @@ public class Peer {
                 ArrayList<String> toUnchoke = calcHighestUploadNeigbor.getKBestUploaders(commonConfigData.getNumberPreferrredNeighbors()); //get k specified from file
                 System.out.println("Inside first scheduled task");
                 System.out.println("Unchoking peers: " + Arrays.toString(toUnchoke.toArray()));
+                //logger.changePreferredNeighborsLog(peerID);
 
                 for(ClientThread thread : connections){
                     boolean wasUnchoked = false;
@@ -249,6 +254,7 @@ public class Peer {
                         if(thread.remotePeer.getPeerID().equals(unc)){
                             wasUnchoked = true;
                             try{
+                                neighborList = neighborList + "," + thread.remotePeer.getPeerID();
                                 thread.sendUnchoke(new Message());
                             }
                             catch(Exception e){
@@ -266,6 +272,8 @@ public class Peer {
                         }
                     }
                 }
+
+                logger.changePreferredNeighborsLog(peerID,neighborList);
                 //choke the rest
 
                 //clears out map.
@@ -304,6 +312,7 @@ public class Peer {
                     // Because sending a message can fail if the network fails.
                     try {
                         possibleUnchoking.get(unchokeIndex).sendMessage(unchoke);
+                        logger.changeOfOptimisticallyUnchockedNeighborLog(peerID,possibleUnchoking.get(unchokeIndex).remotePeer.getPeerID());
                     } catch (IOException e) {
                         System.out.println("Could not send unchoking message in updateChokingUnchoking");
                     }
@@ -337,5 +346,12 @@ public class Peer {
             System.exit(0);
         }
 
+    }
+
+    void increaseNumberOfPiecesTracked(){
+        numberOfPiecesObtained++;
+    }
+    int getNumberOfPiecesObtained(){
+        return numberOfPiecesObtained;
     }
 }

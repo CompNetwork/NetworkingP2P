@@ -186,7 +186,7 @@ the peer who sent the piece. [piece index] is the piece index the peer has downl
         String peerLogFile = "log_peer_" + peerID + ".log";
         String currentDir = System.getProperty("user.dir");
         String fileName = currentDir+peerDirectory+peerLogFile;
-        System.out.println(fileName);
+        //System.out.println(fileName);
 
         File theDir = new File(currentDir+peerDirectory);       //creates the directory needed for the file
         if (!theDir.exists()) theDir.mkdir();

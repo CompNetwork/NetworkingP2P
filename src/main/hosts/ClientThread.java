@@ -182,8 +182,6 @@ public class ClientThread extends Thread {
         // We need to send more requests
         // Also, what if we make a request, and then get choked?
         // We need to remove that request from the quque.
-        // Also send data to peer.
-        fulfillRequest(new Message());
         if(!this.localPeer.getChunky().hasAllChunks()) {
             sendRequest(m);
         }
@@ -325,8 +323,8 @@ public class ClientThread extends Thread {
     // If we have a index that was requested of us, and we, and peer are both unchoked, fulfill.
     // Else do nohing.
     void fulfillRequest(Message message) throws IOException {
-        // Only fullfill a request if we are unchoked, and have a request to fulfill!
-        if (!this.choked && !remotePeer.getChoked() && requestedIndexes.size() != 0) {
+        // Only fullfill a request if have unchoked remote peer unchoked, and have a request to fulfill!
+        if (!remotePeer.getChoked() && requestedIndexes.size() != 0) {
             // Extracts piece from sent message
             // Updates message.type and payload
             // FIXME: Can take the logic below and call sendPiece or leave it here

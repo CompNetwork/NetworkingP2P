@@ -2,6 +2,7 @@ package main.hosts;
 
 import main.file.ChunkifiedFileUtilities;
 import main.file.FileChunk;
+import main.logger.Logger;
 import main.messsage.ByteArrayUtilities;
 import main.messsage.Message;
 import main.messsage.MessageTypeConstants;
@@ -21,6 +22,7 @@ public class ClientThread extends Thread {
     Message message;
     DataInputStream input = null;
     OutputStream output =  null;
+    Logger logger;
 
     private boolean finHandshake;
 
@@ -165,6 +167,7 @@ public class ClientThread extends Thread {
     // Actual Message #0 incoming
     private void handleChoke() {
         // We need to remove all the indexes that we added to the request list!
+        logger.chokedByNeighborLog(remotePeer.getPeerID(),localPeer.getPeerID());
         localPeer.getGloballyRequestedSet().removeAll(remotePeer.getIndexesThatIHaveRequestedFromPeer());
         remotePeer.getIndexesThatIHaveRequestedFromPeer().clear();
         this.choked = true;
@@ -180,7 +183,7 @@ public class ClientThread extends Thread {
 
     // Actual Message #1 incoming
     private void handleUnchoke(Message m) throws IOException {
-
+        logger.unchokedByNeighborLog(localPeer.getPeerID(),remotePeer.getPeerID());
         this.choked = false;
         // if I need pieces sendRequest
         // TODO: This should happen repeatedly, not just one piece per interval!
@@ -202,6 +205,7 @@ public class ClientThread extends Thread {
 
     // Actual Message #2 incoming
     private void handleInterested() {
+        logger.receivedInterestedMessageLog(localPeer.getPeerID(),remotePeer.getPeerID());
         this.interested = true;
     }
 
@@ -216,6 +220,7 @@ public class ClientThread extends Thread {
 
     // Actual Message #3 incoming
     private void handleNotInterested() {
+        logger.receivedNotInterestedMessageLog(localPeer.getPeerID(),remotePeer.getPeerID());
         this.interested = false;
     }
 
@@ -230,6 +235,7 @@ public class ClientThread extends Thread {
     private void handleHave(Message message) throws IOException {
         int chunkIndex = message.getIndexPayload();
         System.out.println("Obtained index # " + chunkIndex);
+        logger.receivedHaveMessageLog(localPeer.getPeerID(),remotePeer.getPeerID(),chunkIndex);
 
         // Store the chunk before we forget.
         // We should only receive have messages for chunks the peer didn't have.
@@ -248,7 +254,6 @@ public class ClientThread extends Thread {
             sendInterested(message);
             this.remotePeer.setInterested(true);
         }
-
         localPeer.checkIfEveryoneIsDone();
     }
 
@@ -368,7 +373,8 @@ public class ClientThread extends Thread {
         if(!this.localPeer.getChunky().hasAllChunks()) {
             sendRequest(message);
         }
-
+        localPeer.increaseNumberOfPiecesTracked();
+        logger.downloadedPieceMessageLog(localPeer.getPeerID(),remotePeer.getPeerID(),pieceIndex,localPeer.getNumberOfPiecesObtained());
         // Inform the remote peer that I have received a piece of size N from peer ID
         // For calculating which peers to unchoke!
         this.getLocalPeer().informOfReceivedPiece(remotePeer.getPeerID(),pieceGot.size());
@@ -380,6 +386,10 @@ public class ClientThread extends Thread {
         this.getLocalPeer().sendUninterestedToAllUninterestingPeers();
 
         // Now check if we were the last peer, and if so, then terminate ourself
+        if(this.getLocalPeer().getChunky().hasAllChunks()){
+            logger.completedDownloadLog(this.getLocalPeer().getPeerID());
+        }
+
         this.getLocalPeer().checkIfEveryoneIsDone();
 
 

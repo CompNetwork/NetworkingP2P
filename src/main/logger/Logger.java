@@ -51,14 +51,14 @@ made TCP connection to [peer_ID 1].
 [preferred neighbor list] is the list of peer IDs separated by comma ‘,’.
      */
 
-    public void changePreferredNeighborsLog(String peerID,String neighborList[] ){
+    public void changePreferredNeighborsLog(String peerID,String neighborList ){
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
-        String log = timeStamp + ": Peer " + peerID + " has the preferred neighbors ";
+        String log = timeStamp + ": Peer " + peerID + " has the preferred neighbors " + neighborList;
 
-        for(int i = 0; i > neighborList.length; i++){
+        /*for(int i = 0; i < neighborList.length; i++){
             log = log + neighborList[i] + ", ";
-        }
+        }*/
 
         log = log + ".";
         logString(log,peerID);
@@ -160,10 +160,10 @@ the peer who sent the piece. [piece index] is the piece index the peer has downl
 [number of pieces] represents the number of pieces the peer currently has.
      */
 
-    public void downloadedPieceMessageLog(String peerID, int otherID,int pieceIndex, int numOfPieces){
+    public void downloadedPieceMessageLog(String peerID, String otherID,int pieceIndex, int numOfPieces){
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
-        String log = timeStamp + ": Peer " + peerID + " has downloaded the piece " + "from " + otherID + ". Now the number of pieces it has is " + numOfPieces + ".";
+        String log = timeStamp + ": Peer " + peerID + " has downloaded the piece " + pieceIndex + "from " + otherID + ". Now the number of pieces it has is " + numOfPieces + ".";
         logString(log,peerID);
     }
 

@@ -74,8 +74,8 @@ public class Message  {
         this.update(MessageTypeConstants.UNINTERESTED,null);
     }
 
-    public void mutateIntoHandshake(String peerID) {
-        this.setAsHandshakeMessage(peerID.getBytes(StandardCharsets.ISO_8859_1));
+    public void mutateIntoHandshake(int peerID) {
+        this.setAsHandshakeMessage(ByteArrayUtilities.SplitIntInto4ByteArray(peerID));
     }
     // Now the slightly more interesting ones with an integer payload!
     public void mutateIntoHave(int payload) {
@@ -100,9 +100,9 @@ public class Message  {
         this.update(MessageTypeConstants.PIECE,piecePayload);
     }
 
-    public static Message createHandShakeMessageFromPeerId(String peerID) {
+    public static Message createHandShakeMessageFromPeerId(int peerID) {
        Message message = new Message();
-       message.setAsHandshakeMessage(peerID.getBytes(StandardCharsets.ISO_8859_1));
+       message.setAsHandshakeMessage(ByteArrayUtilities.SplitIntInto4ByteArray(peerID));
        return message;
     }
 
@@ -176,9 +176,9 @@ public class Message  {
         return m3;
     }
 
-    public String getPeerIdPayload() {
+    public int getPeerIdPayload() {
         if (mType == MessageTypeConstants.HANDSHAKE ) {
-            return new String(m3,StandardCharsets.ISO_8859_1);
+            return ByteArrayUtilities.recombine4ByteArrayIntoInt(m3);
         } else {
             throw new IllegalStateException("Error, asked for an peer id, but this is not a handshake message!");
         }

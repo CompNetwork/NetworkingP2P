@@ -9,26 +9,26 @@ import java.util.List;
 
 public class CalculateHighestUploadingNeighborsTest {
     CalculateHighestUploadingNeighbors calculateHighestUploadingNeighbors = null;
-    ArrayList<String> kHighest;
+    ArrayList<Integer> kHighest;
     public void createCalculateHighestUploadingNeighbors() {
-        List<String> peers = Arrays.asList(new String[]{});
+        List<Integer> peers = Arrays.asList(new Integer[]{});
         calculateHighestUploadingNeighbors = new CalculateHighestUploadingNeighbors(peers);
     }
 
-    public void addPeer(String peer, int value) {
+    public void addPeer(Integer peer, int value) {
         calculateHighestUploadingNeighbors.receivedNewPackageFromNeighbor(peer,value);
     }
 
     public void startWithTwoPeers() {
         createCalculateHighestUploadingNeighbors();
-        addPeer("foo",1);
-        addPeer("bar",2);
+        addPeer(1,1); // foo
+        addPeer(2,2); // bar
     }
 
     public void startWithOnePeer() {
         createCalculateHighestUploadingNeighbors();
-        addPeer("baz",1);
-        calculateHighestUploadingNeighbors.receivedNewPackageFromNeighbor("baz", 1);
+        addPeer(3,1); // baz
+        calculateHighestUploadingNeighbors.receivedNewPackageFromNeighbor(3, 1);
     }
 
     @Test
@@ -37,8 +37,8 @@ public class CalculateHighestUploadingNeighborsTest {
         calculateHighestUploadingNeighbors.clear();
         kHighest = calculateHighestUploadingNeighbors.getKBestUploaders(2);
         Assert.assertEquals(kHighest.size(), 2);
-        Assert.assertTrue(kHighest.contains("bar"));
-        Assert.assertTrue(kHighest.contains("foo"));
+        Assert.assertTrue(kHighest.contains(2));
+        Assert.assertTrue(kHighest.contains(1));
     }
 
     // Test the happy cases
@@ -47,46 +47,46 @@ public class CalculateHighestUploadingNeighborsTest {
         startWithTwoPeers();
         kHighest = calculateHighestUploadingNeighbors.getKBestUploaders(1);
         Assert.assertEquals(kHighest.size(), 1);
-        Assert.assertEquals(kHighest.get(0), "bar");
+        Assert.assertEquals(kHighest.get(0), new Integer(2));
     }
 
     @Test
     public void IfTwoPeersAddedBothTiesGetBoth() {
         startWithTwoPeers();
-        addPeer("foo",1);
+        addPeer(1,1);
         kHighest = calculateHighestUploadingNeighbors.getKBestUploaders(2);
         Assert.assertEquals(kHighest.size(), 2);
-        Assert.assertTrue(kHighest.contains("bar"));
-        Assert.assertTrue(kHighest.contains("foo"));
+        Assert.assertTrue(kHighest.contains(2));
+        Assert.assertTrue(kHighest.contains(1));
 
         // ensure we get one of the two from a tie.
         kHighest = calculateHighestUploadingNeighbors.getKBestUploaders(1);
-        Assert.assertTrue(kHighest.contains("foo") || kHighest.contains("bar"));
+        Assert.assertTrue(kHighest.contains(1) || kHighest.contains(2));
     }
 
     @Test
     public void IfTwoPeersAddedOneRequestedThenIncrementFooGetHighest() {
         startWithTwoPeers();
-        addPeer("foo",2);
+        addPeer(1,2);
         kHighest = calculateHighestUploadingNeighbors.getKBestUploaders(1);
         Assert.assertEquals(kHighest.size(), 1);
-        Assert.assertEquals("foo", kHighest.get(0));
+        Assert.assertEquals(new Integer(1), kHighest.get(0));
     }
 
     @Test
     public void IfThreePeersTwoTiedGetBoth() {
         startWithTwoPeers();
-        addPeer("baz",2);
+        addPeer(3,2);
         kHighest = calculateHighestUploadingNeighbors.getKBestUploaders(2);
         Assert.assertEquals(kHighest.size(), 2);
-        Assert.assertTrue(kHighest.contains("bar"));
-        Assert.assertTrue(kHighest.contains("baz"));
+        Assert.assertTrue(kHighest.contains(2));
+        Assert.assertTrue(kHighest.contains(3));
 
         kHighest = calculateHighestUploadingNeighbors.getKBestUploaders(3);
         Assert.assertEquals(kHighest.size(), 3);
-        Assert.assertTrue(kHighest.contains("bar"));
-        Assert.assertTrue(kHighest.contains("baz"));
-        Assert.assertEquals("foo",kHighest.get(2));
+        Assert.assertTrue(kHighest.contains(2));
+        Assert.assertTrue(kHighest.contains(3));
+        Assert.assertEquals(new Integer(1),kHighest.get(2));
     }
 
     @Test
@@ -94,8 +94,8 @@ public class CalculateHighestUploadingNeighborsTest {
         startWithTwoPeers();
         kHighest = calculateHighestUploadingNeighbors.getKBestUploaders(2);
         Assert.assertEquals(kHighest.size(),2);
-        Assert.assertEquals(kHighest.get(0),"bar");
-        Assert.assertEquals(kHighest.get(1),"foo");
+        Assert.assertEquals(kHighest.get(0),new Integer(2));
+        Assert.assertEquals(kHighest.get(1),new Integer(1));
     }
 
     @Test
@@ -103,8 +103,8 @@ public class CalculateHighestUploadingNeighborsTest {
         startWithTwoPeers();
         kHighest = calculateHighestUploadingNeighbors.getKBestUploaders(3);
         Assert.assertEquals(kHighest.size(),2);
-        Assert.assertEquals(kHighest.get(0),"bar");
-        Assert.assertEquals(kHighest.get(1),"foo");
+        Assert.assertEquals(kHighest.get(0),new Integer(2));
+        Assert.assertEquals(kHighest.get(1),new Integer(1));
     }
 
     @Test
@@ -112,7 +112,7 @@ public class CalculateHighestUploadingNeighborsTest {
         startWithOnePeer();
         kHighest = calculateHighestUploadingNeighbors.getKBestUploaders(1);
         Assert.assertEquals(kHighest.size(),1);
-        Assert.assertEquals(kHighest.get(0),"baz");
+        Assert.assertEquals(kHighest.get(0),new Integer(3));
     }
     //Check when there are ties.
 
@@ -142,7 +142,7 @@ public class CalculateHighestUploadingNeighborsTest {
         boolean found = false;
         try {
             createCalculateHighestUploadingNeighbors();
-            calculateHighestUploadingNeighbors.receivedNewPackageFromNeighbor("foo", -1);
+            calculateHighestUploadingNeighbors.receivedNewPackageFromNeighbor(1, -1);
         } catch(IllegalArgumentException e) {
             found = true;
         }

@@ -9,7 +9,7 @@ public class Peer2 {
 
         Peer p = null;
         try {
-            p = new Peer("1002","127.0.0.1", 8082);
+            p = new Peer(1002,"127.0.0.1", 8082);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }

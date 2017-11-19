@@ -4,7 +4,7 @@ import main.hosts.Peer;
 
 import java.io.FileNotFoundException;
 
-public class Main {
+public class peerProcess {
     public static void main(String [] args) {
         // Handles args Starts peer
         Peer p = null;

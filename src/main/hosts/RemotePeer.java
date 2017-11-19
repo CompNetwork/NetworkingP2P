@@ -18,6 +18,9 @@ public class RemotePeer {
     private boolean interested;
     private boolean choked;
 
+
+    private Set<Integer> indexesThatIHaveRequestedFromPeer = new HashSet<>();
+
     public RemotePeer(String peerID, int chunkCount) {
         this.peerID = peerID;
         this.bitset = new boolean[chunkCount];
@@ -63,5 +66,9 @@ public class RemotePeer {
 
     public boolean getChoked(){
         return choked;
+    }
+
+    public Set<Integer> getIndexesThatIHaveRequestedFromPeer() {
+        return indexesThatIHaveRequestedFromPeer;
     }
 }

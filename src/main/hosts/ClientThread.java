@@ -1,6 +1,5 @@
 package main.hosts;
 
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 import main.file.ChunkifiedFileUtilities;
 import main.file.FileChunk;
 import main.messsage.ByteArrayUtilities;
@@ -8,7 +7,6 @@ import main.messsage.Message;
 import main.messsage.MessageTypeConstants;
 
 import java.io.*;
-import java.lang.reflect.Array;
 import java.net.Socket;
 import java.util.*;
 
@@ -30,7 +28,7 @@ public class ClientThread extends Thread {
     // Are we choked by the remote peer?
     private boolean interested = false;
     private boolean choked = true;
-    private Set<Integer> requestedIndexes = new HashSet<>();
+    private Set<Integer> indexesThatPeerHasRequestedFromMe = new HashSet<>();
 
     public ClientThread(Socket socket, Peer localPeer, RemotePeer remotePeer) throws IOException {
         this.socket = socket;
@@ -154,20 +152,27 @@ public class ClientThread extends Thread {
     
     // Actual Message #0 outgoing
     // Mutates the parameter given
-    private void sendChoke(Message m) throws IOException {
+    public void sendChoke(Message m) throws IOException {
         this.remotePeer.setChoked(true);
         m.mutateIntoChoke();
         this.sendMessage(m);
+        // Clear out the requested indexes, we will not be fulfilling any requests to a choked peer, and they know it!
+        this.indexesThatPeerHasRequestedFromMe.clear();
     }
+
+
 
     // Actual Message #0 incoming
     private void handleChoke() {
+        // We need to remove all the indexes that we added to the request list!
+        localPeer.getGloballyRequestedSet().removeAll(remotePeer.getIndexesThatIHaveRequestedFromPeer());
+        remotePeer.getIndexesThatIHaveRequestedFromPeer().clear();
         this.choked = true;
     }
 
     // Actual Message #1 outgoing
     // Mutates the parameter given
-    private void sendUnchoke(Message m) throws IOException {
+    public void sendUnchoke(Message m) throws IOException {
         this.remotePeer.setChoked(false);;
         m.mutateIntoUnChoke();
         this.sendMessage(m);
@@ -300,6 +305,7 @@ public class ClientThread extends Thread {
                 int payload = missingChunksIndices.get(new Random().nextInt(missingChunksIndices.size()));
                 // Add the payload back in to the global requested indexes so it isn't double requested!
                 requestedIndexes.add(payload);
+                remotePeer.getIndexesThatIHaveRequestedFromPeer().add(payload); // Add to what we locally have requested also!
                 m.mutateIntoRequest(payload);
             }
             System.out.println("Sending request for index " + m.getIndexPayload());
@@ -316,7 +322,7 @@ public class ClientThread extends Thread {
 
         // always store the index we were asked to store, even if choked.
         int pieceIndex = message.getIndexPayload();
-        requestedIndexes.add(pieceIndex);
+        indexesThatPeerHasRequestedFromMe.add(pieceIndex);
         fulfillRequest(message);
     }
 
@@ -324,14 +330,14 @@ public class ClientThread extends Thread {
     // Else do nohing.
     void fulfillRequest(Message message) throws IOException {
         // Only fullfill a request if have unchoked remote peer unchoked, and have a request to fulfill!
-        if (!remotePeer.getChoked() && requestedIndexes.size() != 0) {
+        if (!remotePeer.getChoked() && indexesThatPeerHasRequestedFromMe.size() != 0) {
             // Extracts piece from sent message
             // Updates message.type and payload
             // FIXME: Can take the logic below and call sendPiece or leave it here
             // TODO: Validate we have the piece as well!
 
              // Get the piece, and then remove it
-            Iterator<Integer> requestedPieceIndexIterator = requestedIndexes.iterator();
+            Iterator<Integer> requestedPieceIndexIterator = indexesThatPeerHasRequestedFromMe.iterator();
             int pieceIndex = requestedPieceIndexIterator.next();
             requestedPieceIndexIterator.remove();
             // Send the piece over the wire

@@ -19,8 +19,8 @@ import java.util.*;
 
 public class Peer {
 
-    private static final String PEERINFO = "./src/main/hosts/PeerInfo.cfg";
-    private static final String FILEPATH = "./src/main/hosts/Common.cfg";
+    private String PEERINFO = "PeerInfo.cfg";
+    private String FILEPATH = "Common.cfg";
 
     private String peerID;
     private String hostName;
@@ -41,8 +41,26 @@ public class Peer {
     private Set<Integer> globallyRequestedSet = new HashSet<>();
     CommonConfigData commonConfigData = null;
 
-    public Peer(String peerID, String hostname, int port) throws FileNotFoundException {
+    public Peer(String peerID, String hostname, int port, String pathPrefix) throws FileNotFoundException {
+        PEERINFO = pathPrefix + PEERINFO;
+        FILEPATH = pathPrefix + FILEPATH;
+        initCommonConfig();
+        PeerConfigReader peerConfigReader = new PeerConfigReader(new File(PEERINFO));
+        this.peerConfigDatas = peerConfigReader.getPeerConfigDatas();
+        this.peerID = peerID;
+        this.hostName = hostname;
+        this.port = port;
+        this.connections = new ArrayList<ClientThread>();
+        this.logger = new Logger();
+        this.chunky = initFileChunk(this.peerID);
+        this.time = new Timer();
+        // Read the config file, parse andstore the data.
+        this.calcHighestUploadNeigbor = new CalculateHighestUploadingNeighbors(getAllOtherPeers());
+    }
 
+    public Peer(String peerID, String hostname, int port) throws FileNotFoundException {
+        PEERINFO = "./src/main/hosts/" + PEERINFO;
+        FILEPATH = "./src/main/hosts/" + FILEPATH;
         initCommonConfig();
         PeerConfigReader peerConfigReader = new PeerConfigReader(new File(PEERINFO));
         this.peerConfigDatas = peerConfigReader.getPeerConfigDatas();

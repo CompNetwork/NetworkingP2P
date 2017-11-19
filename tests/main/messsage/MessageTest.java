@@ -27,11 +27,11 @@ public class MessageTest {
     public void updateFromByteArray_CreateHandShakeMessage_ValidHandshakeMessage() {
         Message message = new Message();
         byte[] handshake = { 'P', '2', 'P', 'F', 'I', 'L', 'E', 'S', 'H', 'A', 'R', 'I', 'N', 'G', 'P', 'R', 'O', 'J'
-                            ,0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, '1', '2', '3', '4' };
+                            ,0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* Peer ID */ 0x00, 0x00, 0x04, (byte)0xD2};
         message.update(handshake);
 
         Assert.assertEquals(MessageTypeConstants.HANDSHAKE,message.getmType());
-        Assert.assertEquals("1234",message.getPeerIdPayload());
+        Assert.assertEquals(1234,message.getPeerIdPayload());
         Assert.assertArrayEquals(handshake,message.getFull());
     }
 
@@ -63,11 +63,11 @@ public class MessageTest {
     @Test
     public void mutateIntoHandShake_MutatesIntoHandShake_BecomesAHandShakeMessage() {
         Message message = new Message();
-        message.mutateIntoHandshake("1234");
+        message.mutateIntoHandshake(1234);
         Assert.assertEquals(MessageTypeConstants.HANDSHAKE,message.getmType());
-        Assert.assertEquals("1234",message.getPeerIdPayload());
+        Assert.assertEquals(1234,message.getPeerIdPayload());
         byte[] expectedMessage = { 'P', '2', 'P', 'F', 'I', 'L', 'E', 'S', 'H', 'A', 'R', 'I', 'N', 'G', 'P', 'R', 'O', 'J',
-                            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,'1', '2', '3', '4' };
+                            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /*Peer ID*/ 0x00, 0x00 , 0x04 ,(byte)0xD2 };
         Assert.assertArrayEquals(expectedMessage,message.getFull());
     }
 

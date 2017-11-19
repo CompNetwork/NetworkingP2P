@@ -9,7 +9,7 @@ public class peerProcess {
         // Handles args Starts peer
         Peer p = null;
         try {
-            p = new Peer("1001");
+            p = new Peer(1001);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }

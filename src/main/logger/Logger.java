@@ -20,7 +20,10 @@ hour, minute, and second. The format of [Time] is up to you.
      */
 
 
-    public void TCPConnectionLog(String peerID, String otherPeerID) {
+    public void TCPConnectionLog(int peerIDInt, int otherPeerIDInt) {
+        String peerID = "" + peerIDInt;
+        String otherPeerID = "" + otherPeerIDInt;
+
         //gets time
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
@@ -37,7 +40,9 @@ hour, minute, and second. The format of [Time] is up to you.
 made TCP connection to [peer_ID 1].
 
      */
-    public void acceptConnectionLog(String peerID, String otherPeerID){
+    public void acceptConnectionLog(int peerIDInt, int otherPeerIDInt){
+        String peerID = "" + peerIDInt;
+        String otherPeerID = "" + otherPeerIDInt;
         //called when it has been connected to, not the when it's trying to make a connection
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
@@ -51,7 +56,8 @@ made TCP connection to [peer_ID 1].
 [preferred neighbor list] is the list of peer IDs separated by comma ‘,’.
      */
 
-    public void changePreferredNeighborsLog(String peerID,String neighborList ){
+    public void changePreferredNeighborsLog(int peerIDInt,String neighborList ){
+        String peerID = "" + peerIDInt;
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
         String log = timeStamp + ": Peer " + peerID + " has the preferred neighbors " + neighborList;
@@ -73,7 +79,9 @@ unchoked neighbor ID].
 neighbor.
      */
 
-    public void changeOfOptimisticallyUnchockedNeighborLog(String peerID, String otherID){
+    public void changeOfOptimisticallyUnchockedNeighborLog(int peerIDInt, int otherIDInt){
+        String peerID = "" + peerIDInt;
+        String otherID = "" + otherIDInt;
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
         String log = timeStamp + ": Peer " + peerID + " has the optimistically unchocked neighbor " + otherID + ".";
@@ -88,7 +96,9 @@ unchoking message from a neighbor), it generates the following log:
 who unchokes [peer_ID 1].
      */
 
-    public void unchokedByNeighborLog(String peerID, String otherID){
+    public void unchokedByNeighborLog(int peerIDInt, int otherIDInt){
+        String peerID = "" + peerIDInt;
+        String otherID = "" + otherIDInt;
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
         String log = timeStamp + ": Peer " + peerID + " is unchoked by " + otherID + ".";
@@ -102,7 +112,10 @@ message from a neighbor), it generates the following log:
 [peer_ID 1] represents the peer who is choked and [peer_ID 2] represents the peer
 who chokes [peer_ID 1].
      */
-    public void chokedByNeighborLog(String peerID, String otherID){
+    public void chokedByNeighborLog(int peerIDInt, int otherIDInt){
+        String peerID = "" + peerIDInt;
+        String otherID = "" + otherIDInt;
+
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
         String log = timeStamp + ": Peer " + peerID + " is choked by " + otherID + ".";
@@ -118,7 +131,10 @@ represents the peer who sent the message. [piece index] is the piece index conta
 in the message.
      */
 
-    public void receivedHaveMessageLog(String peerID, String otherID, int pieceIndex){
+    public void receivedHaveMessageLog(int peerIDInt, int otherIDInt, int pieceIndex){
+        String peerID = "" + peerIDInt;
+        String otherID = "" + otherIDInt;
+
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
         String log = timeStamp + ": Peer " + peerID + " received the 'have' message from " + otherID + " for the piece " + pieceIndex + ".";
@@ -131,7 +147,9 @@ in the message.
 [peer_ID 1] represents the peer who received the ‘interested’ message and [peer_ID 2]
 represents the peer who sent the message.
      */
-    public void receivedInterestedMessageLog(String peerID, String otherID){
+    public void receivedInterestedMessageLog(int peerIDInt, int otherIDInt){
+        String peerID = "" + peerIDInt;
+        String otherID = "" + otherIDInt;
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
         String log = timeStamp + ": Peer " + peerID + " received the 'interested' message from " + otherID + ".";
@@ -144,7 +162,9 @@ represents the peer who sent the message.
 [peer_ID 1] represents the peer who received the ‘not interested’ message and
 [peer_ID 2] represents the peer who sent the message.
      */
-    public void receivedNotInterestedMessageLog(String peerID, String otherID){
+    public void receivedNotInterestedMessageLog(int peerIDInt, int otherIDInt){
+        String peerID = "" + peerIDInt;
+        String otherID = "" + otherIDInt;
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
         String log = timeStamp + ": Peer " + peerID + " received the 'not interested' message from " + otherID + ".";
@@ -160,7 +180,9 @@ the peer who sent the piece. [piece index] is the piece index the peer has downl
 [number of pieces] represents the number of pieces the peer currently has.
      */
 
-    public void downloadedPieceMessageLog(String peerID, String otherID,int pieceIndex, int numOfPieces){
+    public void downloadedPieceMessageLog(int peerIDInt, int otherIDInt, int pieceIndex, int numOfPieces){
+        String peerID = "" + peerIDInt;
+        String otherID = "" + otherIDInt;
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
         String log = timeStamp + ": Peer " + peerID + " has downloaded the piece " + pieceIndex + " from " + otherID + ". Now the number of pieces it has is " + numOfPieces + ".";
@@ -171,7 +193,8 @@ the peer who sent the piece. [piece index] is the piece index the peer has downl
     Whenever a peer downloads the complete file, it generates the following log:
 [Time]: Peer [peer_ID] has downloaded the complete file.
      */
-    public void completedDownloadLog(String peerID){
+    public void completedDownloadLog(int peerIDInt){
+        String peerID = "" + peerIDInt;
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
         String log = timeStamp + ": Peer " + peerID + " had downloaded the complete file.";

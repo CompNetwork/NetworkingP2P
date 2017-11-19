@@ -22,7 +22,7 @@ public class Peer {
     private String PEERINFO = "PeerInfo.cfg";
     private String FILEPATH = "Common.cfg";
 
-    private String peerID;
+    private int peerID;
     private String hostName;
     private int port;
     private ArrayList <ClientThread> connections;
@@ -43,7 +43,7 @@ public class Peer {
     private Set<Integer> globallyRequestedSet = new HashSet<>();
     CommonConfigData commonConfigData = null;
 
-    public Peer(String peerID, String pathPrefix) throws FileNotFoundException {
+    public Peer(int peerID, String pathPrefix) throws FileNotFoundException {
         PEERINFO = pathPrefix + PEERINFO;
         FILEPATH = pathPrefix + FILEPATH;
         initCommonConfig();
@@ -54,14 +54,14 @@ public class Peer {
         this.port = getPeerConfigDataForSelf().listeningPort;
         this.connections = new ArrayList<ClientThread>();
         this.logger = new Logger();
-        this.chunky = initFileChunk(this.peerID);
+        this.chunky = initFileChunk();
         this.time = new Timer();
         // Read the config file, parse andstore the data.
         this.calcHighestUploadNeigbor = new CalculateHighestUploadingNeighbors(getAllOtherPeers());
         this.neighborList = "";
     }
 
-    public Peer(String peerID) throws FileNotFoundException {
+    public Peer(int peerID) throws FileNotFoundException {
         PEERINFO = "./src/main/hosts/" + PEERINFO;
         FILEPATH = "./src/main/hosts/" + FILEPATH;
         initCommonConfig();
@@ -72,7 +72,7 @@ public class Peer {
         this.port = getPeerConfigDataForSelf().listeningPort;
         this.connections = new ArrayList<ClientThread>();
         this.logger = new Logger();
-        this.chunky = initFileChunk(this.peerID);
+        this.chunky = initFileChunk();
         this.time = new Timer();
         // Read the config file, parse andstore the data.
         this.calcHighestUploadNeigbor = new CalculateHighestUploadingNeighbors(getAllOtherPeers());
@@ -89,11 +89,11 @@ public class Peer {
         commonConfigData = commonConfigReader.getData();
     }
 
-    private List<String> getAllOtherPeers() {
-        List<String> otherPeers = new ArrayList<String>();
+    private List<Integer> getAllOtherPeers() {
+        List<Integer> otherPeers = new ArrayList<Integer>();
         for ( PeerConfigData peerConfigData : peerConfigDatas ) {
-            if ( !("" + peerConfigData.peerId).equals(peerID) )  {
-                otherPeers.add("" + peerConfigData.peerId);
+            if ( !((peerConfigData.peerId) == ((peerID))))  {
+                otherPeers.add(peerConfigData.peerId);
             }
         }
         return otherPeers;
@@ -115,7 +115,7 @@ public class Peer {
             else System.out.println("Connecting with peers " + peers);
 
             for (PeerConfigData peerConfigData : peers) {
-                String peerID = "" + peerConfigData.peerId;
+                int peerID = peerConfigData.peerId;
 
                 System.out.println("Handling Peer: " + peerConfigData.toString());
 
@@ -166,7 +166,7 @@ public class Peer {
 
     }
 
-    private ChunkifiedFile initFileChunk(String peerID) {
+    private ChunkifiedFile initFileChunk() {
 
 
         PeerConfigData self = this.getPeerConfigDataForSelf();
@@ -194,7 +194,7 @@ public class Peer {
     // Return the index of our own entry in the peer config list!
     private int getSelfIndexInPeerConfigDataList() {
         for ( int i = 0; i != peerConfigDatas.size(); ++i ) {
-            if ( (""+peerConfigDatas.get(i).peerId).equals(this.peerID) ) {
+            if ( (peerConfigDatas.get(i).peerId) == (this.peerID) ) {
                 return i;
             }
 
@@ -221,7 +221,7 @@ public class Peer {
         return chunky;
     }
 
-    public String getPeerID() {
+    public int getPeerID() {
         return peerID;
     }
 
@@ -251,7 +251,7 @@ public class Peer {
         }
     }
 
-    public void informOfReceivedPiece(String peerID, int sizeOfPiece) {
+    public void informOfReceivedPiece(int peerID, int sizeOfPiece) {
         calcHighestUploadNeigbor.receivedNewPackageFromNeighbor(peerID,sizeOfPiece);
 
 
@@ -262,7 +262,7 @@ public class Peer {
         //unchoking
         time.scheduleAtFixedRate(new TimerTask() {
             public void run(){
-                ArrayList<String> toUnchoke = calcHighestUploadNeigbor.getKBestUploaders(commonConfigData.getNumberPreferrredNeighbors()); //get k specified from file
+                ArrayList<Integer> toUnchoke = calcHighestUploadNeigbor.getKBestUploaders(commonConfigData.getNumberPreferrredNeighbors()); //get k specified from file
                 System.out.println("Inside first scheduled task");
                 System.out.println("Unchoking peers: " + Arrays.toString(toUnchoke.toArray()));
                 neighborList = Arrays.toString(toUnchoke.toArray());
@@ -270,8 +270,8 @@ public class Peer {
 
                 for(ClientThread thread : connections){
                     boolean wasUnchoked = false;
-                    for(String unc : toUnchoke){
-                        if(thread.remotePeer.getPeerID().equals(unc)){
+                    for(int unc : toUnchoke){
+                        if(thread.remotePeer.getPeerID() == (unc)){
                             wasUnchoked = true;
                             try{
 

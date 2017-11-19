@@ -260,7 +260,7 @@ public class ClientThread extends Thread {
 
     // Actual Message #5 outgoing
     // Mutates the parameter given
-    private void sendBitField(String peerID, Message m) throws IOException {
+    private void sendBitField(int peerID, Message m) throws IOException {
         if(!this.getFinHandshake()) {
             this.setFinHandshake(true);
             this.remotePeer.setPeerId(peerID);
@@ -410,7 +410,7 @@ public class ClientThread extends Thread {
     }
 
     private void completeHandShake(Message m) throws IOException {
-        String peerID = m.getPeerIdPayload();
+        int peerID = m.getPeerIdPayload();
         this.remotePeer.setPeerId(peerID);
         logger.acceptConnectionLog(getLocalPeer().getPeerID(),remotePeer.getPeerID());
         sendBitField(peerID,m);

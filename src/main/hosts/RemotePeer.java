@@ -10,10 +10,10 @@ import java.util.Set;
 // AKA, interested is are we interested in the remote peer?
 // Bitset is the remote peers bitset
 public class RemotePeer {
-    public static final String NO_PEER_ID_YET = "-1";
+    public static final int NO_PEER_ID_YET = -1;
 
     // If equals NO_PEER_ID_YET, then we haven't received the handshake message and don't know the peerID!
-    private String peerID;
+    private int peerID;
     private boolean[] bitset;
     private boolean interested;
     private boolean choked;
@@ -21,7 +21,7 @@ public class RemotePeer {
 
     private Set<Integer> indexesThatIHaveRequestedFromPeer = new HashSet<>();
 
-    public RemotePeer(String peerID, int chunkCount) {
+    public RemotePeer(int peerID, int chunkCount) {
         this.peerID = peerID;
         this.bitset = new boolean[chunkCount];
         this.interested = false;
@@ -32,7 +32,7 @@ public class RemotePeer {
         return bitset[i];
     }
 
-    public String getPeerID() {
+    public int getPeerID() {
         return peerID;
     }
 
@@ -44,7 +44,7 @@ public class RemotePeer {
         this.bitset = bitset;
     }
 
-    public void setPeerId(String peerID) {
+    public void setPeerId(int peerID) {
         this.peerID = peerID;
     }
 

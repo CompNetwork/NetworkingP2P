@@ -9,16 +9,16 @@ import java.util.*;
 public class CalculateHighestUploadingNeighbors {
 
     // A mapping of peer ids to upload rate in bytes.
-    private Map<String,Integer> peerIdToUpload = Collections.synchronizedMap(new HashMap<>());
+    private Map<Integer,Integer> peerIdToUpload = Collections.synchronizedMap(new HashMap<>());
 
-    public CalculateHighestUploadingNeighbors(List<String> peerIds) {
-        for (String peerID : peerIds ) {
+    public CalculateHighestUploadingNeighbors(List<Integer> peerIds) {
+        for (Integer peerID : peerIds ) {
             peerIdToUpload.put(peerID,0);
         }
         System.out.println("PeerIdList:"+peerIds.size());
     }
     // Call whenever a package is received from a neighbor.
-    public void receivedNewPackageFromNeighbor(String peerId, int bytesReceived) {
+    public void receivedNewPackageFromNeighbor(Integer peerId, int bytesReceived) {
         throwInvalidRangeIfNegative(bytesReceived);
         synchronized (peerIdToUpload) {
             Integer bytesUploaded = peerIdToUpload.get(peerId);
@@ -50,15 +50,15 @@ public class CalculateHighestUploadingNeighbors {
     // Returns the K best uploaders, those who sent us the most data.
     // If we have less than K peers, will print a warning to stderr, and return however many peers we have.
     // On the returned array, index 0 will be highest, and index n will be the lowest.
-    public ArrayList<String> getKBestUploaders(int k) {
+    public ArrayList<Integer> getKBestUploaders(int k) {
         throwInvalidRangeIfNegative(k);
-        TreeMap<Integer, ArrayList<String>> sortedListofUploads = new TreeMap<>();
+        TreeMap<Integer, ArrayList<Integer>> sortedListofUploads = new TreeMap<>();
         synchronized (peerIdToUpload) {
             printWarningifLessThanKPeers(k);
-            for (Map.Entry<String, Integer> entry : peerIdToUpload.entrySet()) {
-                ArrayList<String> peerIdsWithUpload = sortedListofUploads.get(entry.getValue());
+            for (Map.Entry<Integer, Integer> entry : peerIdToUpload.entrySet()) {
+                ArrayList<Integer> peerIdsWithUpload = sortedListofUploads.get(entry.getValue());
                 if ( peerIdsWithUpload == null ) {
-                    peerIdsWithUpload = new ArrayList<String>();
+                    peerIdsWithUpload = new ArrayList<Integer>();
                     sortedListofUploads.put(entry.getValue(),peerIdsWithUpload);
                 }
                 peerIdsWithUpload.add(entry.getKey());
@@ -67,10 +67,10 @@ public class CalculateHighestUploadingNeighbors {
 
         // We no longer touch the backing map, so it's free to be mucked with.
         // We want greatest first, but map is in ascending order, so call descending map.
-        ArrayList<String> topK = new ArrayList<>();
-        for ( ArrayList<String> peerIds : sortedListofUploads.descendingMap().values() ) {
+        ArrayList<Integer> topK = new ArrayList<>();
+        for ( ArrayList<Integer> peerIds : sortedListofUploads.descendingMap().values() ) {
             randomizeArrayList(peerIds);
-            for ( String peerID : peerIds ) {
+            for ( Integer peerID : peerIds ) {
                 if ( topK.size() == k ) {
                     return topK;
                 } else {
@@ -90,7 +90,7 @@ public class CalculateHighestUploadingNeighbors {
 
     public void clear(){
         // Reset all values to 0. // TODO bregg make more efficient!
-        for ( String peerID : peerIdToUpload.keySet()) {
+        for ( Integer peerID : peerIdToUpload.keySet()) {
             peerIdToUpload.put(peerID,0);
         }
     }

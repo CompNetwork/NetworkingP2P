@@ -248,6 +248,8 @@ public class ClientThread extends Thread {
             sendInterested(message);
             this.remotePeer.setInterested(true);
         }
+
+        localPeer.checkIfEveryoneIsDone();
     }
 
     // Actual Message #5 outgoing
@@ -283,6 +285,7 @@ public class ClientThread extends Thread {
         } else {
             this.sendNotInterested(message);
         }
+        localPeer.checkIfEveryoneIsDone();
     }
 
     // Actual Message #6 outgoing
@@ -367,6 +370,7 @@ public class ClientThread extends Thread {
         }
 
         // Inform the remote peer that I have received a piece of size N from peer ID
+        // For calculating which peers to unchoke!
         this.getLocalPeer().informOfReceivedPiece(remotePeer.getPeerID(),pieceGot.size());
 
         // Send a have message to all peers.
@@ -374,6 +378,9 @@ public class ClientThread extends Thread {
 
         // Send uninterested message to all uninteresting peers
         this.getLocalPeer().sendUninterestedToAllUninterestingPeers();
+
+        // Now check if we were the last peer, and if so, then terminate ourself
+        this.getLocalPeer().checkIfEveryoneIsDone();
 
 
     }
@@ -400,5 +407,15 @@ public class ClientThread extends Thread {
     public boolean isRemotePeerInteresting() {
         // If remotePeer has a bit we do not, it is interesting.
         return ChunkifiedFileUtilities.doesAHaveChunksBDoesNot(remotePeer.getBitset(),localPeer.getChunky().AvailableChunks());
+    }
+
+    public boolean isPeerDone() {
+        boolean[] remotePeerBitset = remotePeer.getBitset();
+        for ( int i = 0; i != remotePeerBitset.length; ++i ) {
+            if (!remotePeerBitset[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 }

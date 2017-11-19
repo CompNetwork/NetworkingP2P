@@ -313,4 +313,29 @@ public class Peer {
             }
         }, commonConfigData.getOptimisticUnchokeInterval()*1000,commonConfigData.getOptimisticUnchokeInterval()*1000);           //replace this hardcoded number with fileSpecifiedNum
     }
+
+    // Check all our peers, check if they are complete, if they all are, exit!
+    public void checkIfEveryoneIsDone() {
+        if ( connections.size() == getAllOtherPeers().size()) {
+            for ( ClientThread peer : connections ) {
+                if ( !peer.isPeerDone() ) {
+                    // If a peer is not done, return
+                    return;
+                }
+            }
+            // We are connected to all peers, and they are done.
+            // Double check we are done
+            if ( !chunky.hasAllChunks() ) {
+                // IF we are missing chunks, return
+                return;
+            }
+            // We are connectted to all peers
+            // All peers are done
+            // We are done
+            // Program over, terminate.
+            System.out.println("All peers and self complete, terminating program");
+            System.exit(0);
+        }
+
+    }
 }

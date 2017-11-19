@@ -38,6 +38,7 @@ public class ClientThread extends Thread {
         this.remotePeer = remotePeer;
         this.setupSocketIO();
         this.initHandshake();
+        this.logger = new Logger();
     }
 
 
@@ -411,6 +412,7 @@ public class ClientThread extends Thread {
     private void completeHandShake(Message m) throws IOException {
         String peerID = m.getPeerIdPayload();
         this.remotePeer.setPeerId(peerID);
+        logger.acceptConnectionLog(getLocalPeer().getPeerID(),remotePeer.getPeerID());
         sendBitField(peerID,m);
     }
 

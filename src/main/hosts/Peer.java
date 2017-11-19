@@ -241,6 +241,7 @@ public class Peer {
             public void run(){
                 ArrayList<String> toUnchoke = calcHighestUploadNeigbor.getKBestUploaders(commonConfigData.getNumberPreferrredNeighbors()); //get k specified from file
                 System.out.println("Inside first scheduled task");
+                System.out.println("Unchoking peers: " + Arrays.toString(toUnchoke.toArray()));
                 //tell them to unchoke list
                 Message unchoke = new Message();
                 unchoke.mutateIntoUnChoke();

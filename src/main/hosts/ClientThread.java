@@ -113,7 +113,7 @@ public class ClientThread extends Thread {
             case MessageTypeConstants.REQUEST:
 
                 handleRequest(message);
-                System.out.println("Received Request");
+                System.out.println("Received Request, index " + message.getIndexPayload());
                 break;
             case MessageTypeConstants.PIECE:
 
@@ -182,6 +182,8 @@ public class ClientThread extends Thread {
         // We need to send more requests
         // Also, what if we make a request, and then get choked?
         // We need to remove that request from the quque.
+        // Also send data to peer.
+        fulfillRequest(new Message());
         if(!this.localPeer.getChunky().hasAllChunks()) {
             sendRequest(m);
         }
@@ -302,7 +304,7 @@ public class ClientThread extends Thread {
                 requestedIndexes.add(payload);
                 m.mutateIntoRequest(payload);
             }
-            System.out.println("Sending request");
+            System.out.println("Sending request for index " + m.getIndexPayload());
             this.sendMessage(m);
 
         }
@@ -311,14 +313,30 @@ public class ClientThread extends Thread {
 
     // Actual Message #6 incoming
     private void handleRequest(Message message) throws IOException {
+        System.out.println("Received request for piece " + message.getIndexPayload() + " while : " + (!this.choked && !remotePeer.getChoked()) );
+        System.out.println("!this.choked : " + !this.choked + ", !remotePeer.choked " + !remotePeer.getChoked());
 
-        if(!this.choked && !remotePeer.getChoked()) {
+        // always store the index we were asked to store, even if choked.
+        int pieceIndex = message.getIndexPayload();
+        requestedIndexes.add(pieceIndex);
+        fulfillRequest(message);
+    }
+
+    // If we have a index that was requested of us, and we, and peer are both unchoked, fulfill.
+    // Else do nohing.
+    void fulfillRequest(Message message) throws IOException {
+        // Only fullfill a request if we are unchoked, and have a request to fulfill!
+        if (!this.choked && !remotePeer.getChoked() && requestedIndexes.size() != 0) {
             // Extracts piece from sent message
-            int pieceIndex = message.getIndexPayload();
-            requestedIndexes.add(pieceIndex);
             // Updates message.type and payload
             // FIXME: Can take the logic below and call sendPiece or leave it here
             // TODO: Validate we have the piece as well!
+
+             // Get the piece, and then remove it
+            Iterator<Integer> requestedPieceIndexIterator = requestedIndexes.iterator();
+            int pieceIndex = requestedPieceIndexIterator.next();
+            requestedPieceIndexIterator.remove();
+            // Send the piece over the wire
             message.mutateIntoPiece(this.localPeer.getChunky().getChunk(pieceIndex), pieceIndex);
             sendMessage(message);
         }
@@ -335,6 +353,7 @@ public class ClientThread extends Thread {
     // Actual Message #7 outgoing
     private void handlePiece(Message message) throws IOException {
         int pieceIndex = message.getIndexPayload();
+        System.out.println("REceived piece index of " + pieceIndex);
         FileChunk pieceGot = message.getFileChunkPayload();
         this.getLocalPeer().getChunky().setChunk(pieceIndex,pieceGot);
 

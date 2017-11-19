@@ -121,7 +121,7 @@ in the message.
     public void receivedHaveMessageLog(String peerID, String otherID, int pieceIndex){
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
-        String log = timeStamp + ": Peer " + peerID + " received the 'have' message from " + otherID + "for the piece " + pieceIndex + ".";
+        String log = timeStamp + ": Peer " + peerID + " received the 'have' message from " + otherID + " for the piece " + pieceIndex + ".";
         logString(log,peerID);
     }
 
@@ -163,7 +163,7 @@ the peer who sent the piece. [piece index] is the piece index the peer has downl
     public void downloadedPieceMessageLog(String peerID, String otherID,int pieceIndex, int numOfPieces){
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
-        String log = timeStamp + ": Peer " + peerID + " has downloaded the piece " + pieceIndex + "from " + otherID + ". Now the number of pieces it has is " + numOfPieces + ".";
+        String log = timeStamp + ": Peer " + peerID + " has downloaded the piece " + pieceIndex + " from " + otherID + ". Now the number of pieces it has is " + numOfPieces + ".";
         logString(log,peerID);
     }
 

@@ -58,6 +58,7 @@ public class Peer {
         this.time = new Timer();
         // Read the config file, parse andstore the data.
         this.calcHighestUploadNeigbor = new CalculateHighestUploadingNeighbors(getAllOtherPeers());
+        this.neighborList = "";
     }
 
     public Peer(String peerID, String hostname, int port) throws FileNotFoundException {
@@ -149,7 +150,7 @@ public class Peer {
                 RemotePeer remotePeer = new RemotePeer(RemotePeer.NO_PEER_ID_YET,chunky.getChunkCount());
                 ClientThread ct = new ClientThread(s, this, remotePeer);
                 ct.start();
-                logger.acceptConnectionLog(this.peerID,remotePeer.getPeerID());
+
                 this.connections.add(ct);
             }
         } catch (IOException e) {
@@ -264,6 +265,7 @@ public class Peer {
                 ArrayList<String> toUnchoke = calcHighestUploadNeigbor.getKBestUploaders(commonConfigData.getNumberPreferrredNeighbors()); //get k specified from file
                 System.out.println("Inside first scheduled task");
                 System.out.println("Unchoking peers: " + Arrays.toString(toUnchoke.toArray()));
+                neighborList = Arrays.toString(toUnchoke.toArray());
                 //logger.changePreferredNeighborsLog(peerID);
 
                 for(ClientThread thread : connections){
@@ -272,7 +274,7 @@ public class Peer {
                         if(thread.remotePeer.getPeerID().equals(unc)){
                             wasUnchoked = true;
                             try{
-                                neighborList = neighborList + "," + thread.remotePeer.getPeerID();
+
                                 thread.sendUnchoke(new Message());
                             }
                             catch(Exception e){
@@ -289,10 +291,12 @@ public class Peer {
                             System.out.println("Failed to send choke");
                         }
                     }
+
+
                 }
 
                 logger.changePreferredNeighborsLog(peerID,neighborList);
-                //choke the rest
+
 
                 //clears out map.
                 calcHighestUploadNeigbor.clear();

@@ -15,7 +15,7 @@ public class MultiTest {
                     System.setProperty("user.dir", currentPrefix);
                     Peer p = null;
                     try {
-                        p = new Peer(1000+i, "127.0.0.1", 8080+i,currentPrefix);
+                        p = new Peer(1000+i,currentPrefix);
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     }

@@ -43,15 +43,15 @@ public class Peer {
     private Set<Integer> globallyRequestedSet = new HashSet<>();
     CommonConfigData commonConfigData = null;
 
-    public Peer(int peerID, String hostname, int port, String pathPrefix) throws FileNotFoundException {
+    public Peer(int peerID, String pathPrefix) throws FileNotFoundException {
         PEERINFO = pathPrefix + PEERINFO;
         FILEPATH = pathPrefix + FILEPATH;
         initCommonConfig();
         PeerConfigReader peerConfigReader = new PeerConfigReader(new File(PEERINFO));
         this.peerConfigDatas = peerConfigReader.getPeerConfigDatas();
         this.peerID = peerID;
-        this.hostName = hostname;
-        this.port = port;
+        this.hostName = getPeerConfigDataForSelf().hostName;
+        this.port = getPeerConfigDataForSelf().listeningPort;
         this.connections = new ArrayList<ClientThread>();
         this.logger = new Logger();
         this.chunky = initFileChunk();
@@ -61,15 +61,15 @@ public class Peer {
         this.neighborList = "";
     }
 
-    public Peer(int peerID, String hostname, int port) throws FileNotFoundException {
+    public Peer(int peerID) throws FileNotFoundException {
         PEERINFO = "./src/main/hosts/" + PEERINFO;
         FILEPATH = "./src/main/hosts/" + FILEPATH;
         initCommonConfig();
         PeerConfigReader peerConfigReader = new PeerConfigReader(new File(PEERINFO));
         this.peerConfigDatas = peerConfigReader.getPeerConfigDatas();
         this.peerID = peerID;
-        this.hostName = hostname;
-        this.port = port;
+        this.hostName = getPeerConfigDataForSelf().hostName;
+        this.port = getPeerConfigDataForSelf().listeningPort;
         this.connections = new ArrayList<ClientThread>();
         this.logger = new Logger();
         this.chunky = initFileChunk();

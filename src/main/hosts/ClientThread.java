@@ -355,6 +355,11 @@ public class ClientThread extends Thread {
         FileChunk pieceGot = message.getFileChunkPayload();
         this.getLocalPeer().getChunky().setChunk(pieceIndex,pieceGot);
 
+        // Send out a new request
+        if(!this.localPeer.getChunky().hasAllChunks()) {
+            sendRequest(message);
+        }
+
         // Inform the remote peer that I have received a piece of size N from peer ID
         this.getLocalPeer().informOfReceivedPiece(remotePeer.getPeerID(),pieceGot.size());
 
@@ -363,6 +368,7 @@ public class ClientThread extends Thread {
 
         // Send uninterested message to all uninteresting peers
         this.getLocalPeer().sendUninterestedToAllUninterestingPeers();
+
 
     }
 

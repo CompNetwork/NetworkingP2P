@@ -168,15 +168,18 @@ public class Peer {
 
     private ChunkifiedFile initFileChunk() {
 
+        String[] pathParts = commonConfigData.getFileName().split("/");
+        String filename = "./peer_" + this.peerID + "/" + pathParts[pathParts.length-1];
 
         PeerConfigData self = this.getPeerConfigDataForSelf();
         ChunkifiedFile chunkifiedFile = null;
         // Sets the Chunkified File data if this localPeer has the file
         if (self.hasFileOrNot) {
+            //TODO: Copy file to path
             chunkifiedFile = ChunkifiedFile.GetFromExisingFile(commonConfigData.getFileName(), commonConfigData.getPieceSize(), commonConfigData.getFileSize());
         } else {
 
-            chunkifiedFile = ChunkifiedFile.CreateFile(commonConfigData.getFileName(), commonConfigData.getPieceSize(), commonConfigData.getFileSize());
+            chunkifiedFile = ChunkifiedFile.CreateFile(filename, commonConfigData.getPieceSize(), commonConfigData.getFileSize());
         }
         return chunkifiedFile;
     }

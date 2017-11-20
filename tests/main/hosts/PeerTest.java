@@ -9,7 +9,7 @@ import java.io.FileNotFoundException;
 
 public class PeerTest {
 
-    Peer peer = new Peer(1001,"127.0.0.1", 8081);
+    Peer peer = new Peer(1001);
 
     public PeerTest() throws FileNotFoundException {
     }

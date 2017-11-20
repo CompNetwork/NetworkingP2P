@@ -2,3 +2,4 @@ out
 .idea
 P2P.iml
 peer_*
+*.class

@@ -28,7 +28,10 @@ public class StartRemotePeers {
         int i1;
         peerInfoVector = new Vector<RemotePeerInfo>();
         try {
-            BufferedReader in = new BufferedReader(new FileReader("../hosts/PeerInfo.cfg"));
+
+            String configDir = System.getProperty("user.dir").substring(0,System.getProperty("user.dir").indexOf("main")) + "PeerConfig/PeerInfo.cfg";
+            System.out.println(configDir);
+            BufferedReader in = new BufferedReader(new FileReader(configDir));
             while((st = in.readLine()) != null) {
 
                 String[] tokens = st.split("\\s+");
@@ -60,7 +63,9 @@ public class StartRemotePeers {
 
             // get current path
             String temp = System.getProperty("user.dir");
-            String path = temp.substring(0,temp.lastIndexOf("/"));
+            String path = temp.substring(0,temp.indexOf("src"))+"out/artifacts/P2P_jar/";
+
+            System.out.println(path);
 
             // start clients at remote hosts
             for (int i = 0; i < myStart.peerInfoVector.size(); i++) {
@@ -70,8 +75,8 @@ public class StartRemotePeers {
 
                 // *********************** IMPORTANT *************************** //
                 // If your program is JAVA, use this line.
-                       //System.out.println("ssh " + pInfo.peerAddress + " cd " + path + "; java peerProcess " + pInfo.peerId);
-                Runtime.getRuntime().exec("ssh " + pInfo.peerAddress + " cd " + path + "; java peerProcess " + pInfo.peerId);
+                       System.out.println("ssh " + pInfo.peerAddress + " cd " + path + "; java -jar P2P.jar " + pInfo.peerId);
+                //Runtime.getRuntime().exec("ssh " + pInfo.peerAddress + " cd " + path + "; java peerProcess " + pInfo.peerId);
 
                 // If your program is C/C++, use this line instead of the above line.
 

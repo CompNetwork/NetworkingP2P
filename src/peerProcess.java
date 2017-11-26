@@ -16,7 +16,7 @@ public class peerProcess {
 
         int peerID = Integer.parseInt(args[0]);
 
-        String configPathPrefix = System.getProperty("user.dir") + "/src/";
+        String configPathPrefix = System.getProperty("user.dir") + "/";
         System.out.println("Starting with peerID: " + peerID + " and filePathPrefix: " + configPathPrefix);
         Peer p = null;
         try {

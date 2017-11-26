@@ -120,6 +120,7 @@ public class Peer {
                 System.out.println("Handling Peer: " + peerConfigData.toString());
 
                 System.out.println("I am " + this.peerID + " attempting to connect with " + peerID);
+                System.out.println("hostname: " + peerConfigData.hostName + " port " + Integer.valueOf(peerConfigData.listeningPort));
                 Socket s = new Socket(peerConfigData.hostName, Integer.valueOf(peerConfigData.listeningPort));
                 RemotePeer remotePeer = new RemotePeer(peerID,chunky.getChunkCount());
                 ClientThread ct = new ClientThread(s, this,remotePeer);
@@ -184,14 +185,11 @@ public class Peer {
             //TODO: Copy file to path
 
             String projectDir = System.getProperty("user.dir");
-            int pathIndex = System.getProperty("user.dir").indexOf("out");
+            int pathIndex = System.getProperty("user.dir").indexOf("src");
 
             if(pathIndex != -1) {
                 projectDir = System.getProperty("user.dir").substring(0,pathIndex);
             }
-
-
-            System.out.println(projectDir + "/" +commonConfigData.getFileName());
 
             chunkifiedFile = ChunkifiedFile.GetFromExisingFile(projectDir + "/" + commonConfigData.getFileName(), commonConfigData.getPieceSize(), commonConfigData.getFileSize());
         } else {

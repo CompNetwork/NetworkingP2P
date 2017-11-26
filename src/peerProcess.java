@@ -6,18 +6,21 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Arrays;
 
-public class CommandLineMain {
+public class peerProcess {
     public static void main (String [] args) {
         System.out.println("Starting client!");
-        if ( args.length < 2 ) {
+
+        if ( args.length < 1 ) {
             System.out.println("Error, first argument is the filepath prefix, second is the peerID!");
         }
-        String filePathPrefix = args[0];
-        int peerID = Integer.parseInt(args[1]);
-        System.out.println("Starting with peerID: " + peerID + " and filePathPrefix: " + filePathPrefix);
+
+        int peerID = Integer.parseInt(args[0]);
+
+        String configPathPrefix = System.getProperty("user.dir") + "/src/";
+        System.out.println("Starting with peerID: " + peerID + " and filePathPrefix: " + configPathPrefix);
         Peer p = null;
         try {
-            p = new Peer(peerID,filePathPrefix);
+            p = new Peer(peerID,configPathPrefix);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }

@@ -19,8 +19,8 @@ import java.util.*;
 
 public class Peer {
 
-    private String PEERINFO = "PeerInfo.cfg";
-    private String FILEPATH = "Common.cfg";
+    private String PEERINFO = "PeerConfig/PeerInfo.cfg";
+    private String FILEPATH = "PeerConfig/Common.cfg";
 
     private int peerID;
     private String hostName;
@@ -168,18 +168,35 @@ public class Peer {
 
     private ChunkifiedFile initFileChunk() {
 
+        String fileSep = System.getProperty("file.separator");
         String[] pathParts = commonConfigData.getFileName().split("/");
-        String filename = "./peer_" + this.peerID + "/" + pathParts[pathParts.length-1];
+        String currentDir = System.getProperty("user.dir");
+        String peerLogDir = fileSep + "peer_" + this.peerID + fileSep;
+        String filepath = currentDir + peerLogDir + pathParts[pathParts.length-1];
+
+        File theDir = new File(currentDir+peerLogDir);
+        if (!theDir.exists()) theDir.mkdir();
 
         PeerConfigData self = this.getPeerConfigDataForSelf();
         ChunkifiedFile chunkifiedFile = null;
         // Sets the Chunkified File data if this localPeer has the file
         if (self.hasFileOrNot) {
             //TODO: Copy file to path
-            chunkifiedFile = ChunkifiedFile.GetFromExisingFile(commonConfigData.getFileName(), commonConfigData.getPieceSize(), commonConfigData.getFileSize());
+
+            String projectDir = System.getProperty("user.dir");
+            int pathIndex = System.getProperty("user.dir").indexOf("out");
+
+            if(pathIndex != -1) {
+                projectDir = System.getProperty("user.dir").substring(0,pathIndex);
+            }
+
+
+            System.out.println(projectDir + "/" +commonConfigData.getFileName());
+
+            chunkifiedFile = ChunkifiedFile.GetFromExisingFile(projectDir + "/" + commonConfigData.getFileName(), commonConfigData.getPieceSize(), commonConfigData.getFileSize());
         } else {
 
-            chunkifiedFile = ChunkifiedFile.CreateFile(filename, commonConfigData.getPieceSize(), commonConfigData.getFileSize());
+            chunkifiedFile = ChunkifiedFile.CreateFile(filepath, commonConfigData.getPieceSize(), commonConfigData.getFileSize());
         }
         return chunkifiedFile;
     }

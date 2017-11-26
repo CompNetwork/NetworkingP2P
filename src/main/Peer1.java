@@ -4,12 +4,13 @@ import main.hosts.Peer;
 
 import java.io.FileNotFoundException;
 
-public class peerProcess {
+public class Peer1 {
     public static void main(String [] args) {
-        // Handles args Starts peer
+
         Peer p = null;
+        String homeDirectory = System.getProperty("user.dir") + "/src/";
         try {
-            p = new Peer(1001);
+            p = new Peer(1002, homeDirectory);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }

@@ -86,6 +86,9 @@ public class StartRemotePeers {
 
             }
             System.out.println("Starting all remote peers has done." );
+            while(true) {
+                Thread.sleep(1000);
+            }
         }
         catch (Exception ex) {
             ex.printStackTrace();

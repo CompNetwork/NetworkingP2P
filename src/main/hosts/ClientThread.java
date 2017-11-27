@@ -63,6 +63,8 @@ public class ClientThread extends Thread {
             e.printStackTrace();
         } finally {
             System.out.println("Closing socket" + this.socket + " to Peer" + localPeer.getPeerID());
+            System.out.println("seeing if we need to close program");
+            getLocalPeer().checkIfEveryoneIsDone();
             try {
                 this.socket.close();
             } catch (IOException e) {

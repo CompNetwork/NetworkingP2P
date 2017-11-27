@@ -87,25 +87,6 @@ public class StartRemotePeers {
 
             }
             System.out.println("Starting all remote peers has done." );
-            int i = 0;
-            for ( Process proc : processes ) {
-                System.out.println("------------- Printing out info for peer #" +i);
-
-                BufferedReader stdInput = new BufferedReader(new
-                        InputStreamReader(proc.getInputStream()));
-                BufferedReader stdError = new BufferedReader(new
-                        InputStreamReader(proc.getErrorStream()));
-                String s = null;
-                while ((s = stdError.readLine()) != null) {
-                    System.err.println(s);
-                }
-
-                while ((s = stdInput.readLine()) != null) {
-                    System.out.println(s);
-                }
-                ++i;
-
-            }
         }
         catch (Exception ex) {
             ex.printStackTrace();

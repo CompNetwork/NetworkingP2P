@@ -1,3 +1,7 @@
+package RemoteStart;
+
+import RemoteStart.RemotePeerInfo;
+
 import java.io.*;
 import java.util.*;
 
@@ -20,16 +24,16 @@ import java.util.*;
  */
 public class StartRemotePeers {
 
-    public Vector<RemotePeerInfo> peerInfoVector;
+    public ArrayList<RemotePeerInfo> peerInfoVector;
 
     public void getConfiguration()
     {
         String st;
         int i1;
-        peerInfoVector = new Vector<RemotePeerInfo>();
+        peerInfoVector = new ArrayList<>();
         try {
 
-            String configDir = System.getProperty("user.dir").substring(0,System.getProperty("user.dir").indexOf("RemoteStart")) + "PeerConfig/PeerInfo.cfg";
+            String configDir = System.getProperty("user.dir")  + "/PeerConfig/PeerInfo.cfg";
             System.out.println("Config Dir: " + configDir);
             BufferedReader in = new BufferedReader(new FileReader(configDir));
             while((st = in.readLine()) != null) {
@@ -41,14 +45,14 @@ public class StartRemotePeers {
                 //}
                 //System.out.println("tokens end ----");
 
-                peerInfoVector.addElement(new RemotePeerInfo(tokens[0], tokens[1], tokens[2]));
+                peerInfoVector.add(new RemotePeerInfo(tokens[0], tokens[1], tokens[2]));
 
             }
 
             in.close();
         }
         catch (Exception ex) {
-            System.out.println(ex.toString());
+            ex.printStackTrace();
         }
     }
 
@@ -56,36 +60,50 @@ public class StartRemotePeers {
      * @param args
      */
     public static void main(String[] args) {
-        // TODO Auto-generated method stub
+        ArrayList<Process> processes = new ArrayList<>();
         try {
             StartRemotePeers myStart = new StartRemotePeers();
             myStart.getConfiguration();
 
             // get current path
-            String temp = System.getProperty("user.dir");
-            String path = temp.substring(0,temp.indexOf("RemoteStart"));
+            String path = System.getProperty("user.dir");
             System.out.println("Root path: " + path);
 
             // start clients at remote hosts
             for (int i = 0; i < myStart.peerInfoVector.size(); i++) {
-                RemotePeerInfo pInfo = (RemotePeerInfo) myStart.peerInfoVector.elementAt(i);
+                RemotePeerInfo pInfo = myStart.peerInfoVector.get(i);
 
                 System.out.println("Start remote peer " + pInfo.peerId +  " at " + pInfo.peerAddress );
 
                 // *********************** IMPORTANT *************************** //
                 // If your program is JAVA, use this line.
-                       System.out.println("ssh " + pInfo.peerAddress + " cd " + path + "; java peerProcess " + pInfo.peerId);
-                //Runtime.getRuntime().exec("ssh " + pInfo.peerAddress + " cd " + path + "; java peerProcess " + pInfo.peerId);
+                String exec = "ssh " + pInfo.peerAddress + " cd " + path + "; java -jar IndividualPeer.jar " + pInfo.peerId;
+                //String exec = "echo 'foo'";
+                System.out.println("Executing the following line " + exec);
+                processes.add(Runtime.getRuntime().exec(exec));
 
-                // If your program is C/C++, use this line instead of the above line.
-
-                //Runtime.getRuntime().exec("ssh " + pInfo.peerAddress + " cd " + path + "; ./peerProcess " + pInfo.peerId);
             }
             System.out.println("Starting all remote peers has done." );
 
+
+            for ( Process proc : processes ) {
+                BufferedReader stdInput = new BufferedReader(new
+                        InputStreamReader(proc.getInputStream()));
+                BufferedReader stdError = new BufferedReader(new
+                        InputStreamReader(proc.getErrorStream()));
+                String s = null;
+                while ((s = stdError.readLine()) != null) {
+                    System.err.println(s);
+                }
+
+                while ((s = stdInput.readLine()) != null) {
+                    System.out.println(s);
+                }
+
+            }
         }
         catch (Exception ex) {
-            System.out.println(ex);
+            ex.printStackTrace();
         }
     }
 

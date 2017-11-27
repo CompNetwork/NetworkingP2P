@@ -1,4 +1,5 @@
-/*
+package RemoteStart;/*
+
  *                     CEN5501C Project2
  * This is the program starting remote processes.
  * This program was only tested on CISE SunOS environment.

@@ -78,7 +78,7 @@ public class StartRemotePeers {
                 // *********************** IMPORTANT *************************** //
                 // If your program is JAVA, use this line.
                 String exec = "ssh " + pInfo.peerAddress + " cd " + path + "; java -jar IndividualPeer.jar " + pInfo.peerId;
-                if ( args[0] == "kill" ) {
+                if ( args[0].equals("kill") ) {
                     exec = "ssh " + pInfo.peerAddress + " cd " + path + "; pkill \"java -jar *\"";
                 }
                 System.out.println("Executing the following line " + exec);

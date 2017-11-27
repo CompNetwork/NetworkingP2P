@@ -78,7 +78,9 @@ public class StartRemotePeers {
                 // *********************** IMPORTANT *************************** //
                 // If your program is JAVA, use this line.
                 String exec = "ssh " + pInfo.peerAddress + " cd " + path + "; java -jar IndividualPeer.jar " + pInfo.peerId;
-                //String exec = "echo 'foo'";
+                if ( args[1] == "kill" ) {
+                    exec = "ssh " + pInfo.peerAddress + " cd " + path + "; pkill \"java -jar *\"";
+                }
                 System.out.println("Executing the following line " + exec);
                 processes.add(Runtime.getRuntime().exec(exec));
 
@@ -86,7 +88,10 @@ public class StartRemotePeers {
             System.out.println("Starting all remote peers has done." );
 
 
+            int i = 0;
             for ( Process proc : processes ) {
+                System.out.println("------------- Printing out info for peer #" +i);
+
                 BufferedReader stdInput = new BufferedReader(new
                         InputStreamReader(proc.getInputStream()));
                 BufferedReader stdError = new BufferedReader(new
@@ -99,6 +104,7 @@ public class StartRemotePeers {
                 while ((s = stdInput.readLine()) != null) {
                     System.out.println(s);
                 }
+                ++i;
 
             }
         }

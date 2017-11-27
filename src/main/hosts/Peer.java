@@ -99,6 +99,19 @@ public class Peer {
         return otherPeers;
     }
 
+    private List<Integer> getAllPeersAboveMe() {
+        List<Integer> otherPeers = new ArrayList<Integer>();
+        for ( PeerConfigData peerConfigData : peerConfigDatas ) {
+            if ( !((peerConfigData.peerId) == ((peerID))))  {
+                otherPeers.add(peerConfigData.peerId);
+            } else {
+                break;
+            }
+        }
+        return otherPeers;
+
+    }
+
     // Starts P2P process
     public void start() {
         //this.chunky.AvailableChunks();
@@ -365,9 +378,9 @@ public class Peer {
 
     // Check all our peers, check if they are complete, if they all are, exit!
     public void checkIfEveryoneIsDone() {
-        if ( connections.size() != getAllOtherPeers().size()) {
+        if ( connections.size() != getAllPeersAboveMe().size()) {
             // Don't abort exiting, but do check this.
-            System.out.println("Error in connection size!!!");
+            System.out.println("Error in connection size!!! Reported is " + connections.size() + " But expected is " + getAllOtherPeers().size());
         }
         for ( ClientThread peer : connections ) {
             if ( !peer.isPeerDone() ) {

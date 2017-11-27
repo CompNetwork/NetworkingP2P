@@ -365,30 +365,30 @@ public class Peer {
 
     // Check all our peers, check if they are complete, if they all are, exit!
     public void checkIfEveryoneIsDone() {
-        if ( connections.size() == getAllOtherPeers().size()) {
-            for ( ClientThread peer : connections ) {
-                if ( !peer.isPeerDone() ) {
-                    // If a peer is not done, return
-                    System.out.println("we are not closing because peer " + peer.remotePeer.getPeerID());
-                    return;
-                }
-            }
-            // We are connected to all peers, and they are done.
-            // Double check we are done
-            if ( !chunky.hasAllChunks() ) {
-                // IF we are missing chunks, return
-                System.out.println("we are not finishing because we do not have all the chunks!");
-                return;
-            }
-            // We are connectted to all peers
-            // All peers are done
-            // We are done
-            // Program over, terminate.
-            System.out.println("All peers and self complete, terminating program");
-            System.exit(0);
-        } else {
+        if ( connections.size() != getAllOtherPeers().size()) {
+            // Don't abort exiting, but do check this.
             System.out.println("Error in connection size!!!");
         }
+        for ( ClientThread peer : connections ) {
+            if ( !peer.isPeerDone() ) {
+                // If a peer is not done, return
+                System.out.println("we are not closing because peer " + peer.remotePeer.getPeerID());
+                return;
+            }
+        }
+        // We are connected to all peers, and they are done.
+        // Double check we are done
+        if ( !chunky.hasAllChunks() ) {
+            // IF we are missing chunks, return
+            System.out.println("we are not finishing because we do not have all the chunks!");
+            return;
+        }
+        // We are connectted to all peers
+        // All peers are done
+        // We are done
+        // Program over, terminate.
+        System.out.println("All peers and self complete, terminating program");
+        System.exit(0);
 
     }
 

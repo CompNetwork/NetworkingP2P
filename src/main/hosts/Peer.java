@@ -386,6 +386,8 @@ public class Peer {
             // Program over, terminate.
             System.out.println("All peers and self complete, terminating program");
             System.exit(0);
+        } else {
+            System.out.println("Error in connection size!!!");
         }
 
     }

@@ -369,6 +369,7 @@ public class Peer {
             for ( ClientThread peer : connections ) {
                 if ( !peer.isPeerDone() ) {
                     // If a peer is not done, return
+                    System.out.println("we are not closing because peer " + peer.remotePeer.getPeerID());
                     return;
                 }
             }
@@ -376,6 +377,7 @@ public class Peer {
             // Double check we are done
             if ( !chunky.hasAllChunks() ) {
                 // IF we are missing chunks, return
+                System.out.println("we are not finishing because we do not have all the chunks!");
                 return;
             }
             // We are connectted to all peers

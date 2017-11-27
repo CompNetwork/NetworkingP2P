@@ -381,6 +381,7 @@ public class Peer {
         if ( connections.size() != getAllOtherPeers().size()) {
             // Don't abort exiting, but do check this.
             System.out.println("Error in connection size!!! Reported is " + connections.size() + " But expected is " + getAllOtherPeers().size());
+            System.out.println("----------------------------------------THIS IS BAD----------------------------------");
         }
         for ( ClientThread peer : connections ) {
             if ( !peer.isPeerDone() ) {

@@ -87,6 +87,9 @@ public class StartRemotePeers {
                 System.out.println("Executing the following line " + exec);
                 processes.add(Runtime.getRuntime().exec(exec));
 
+                // Sleep for a second inbetween starting each peer to give it time to bring it's server up!
+                Thread.sleep(1000);
+
             }
             System.out.println("Starting all remote peers has done." );
         }

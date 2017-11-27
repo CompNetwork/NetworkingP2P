@@ -378,7 +378,7 @@ public class Peer {
 
     // Check all our peers, check if they are complete, if they all are, exit!
     public void checkIfEveryoneIsDone() {
-        if ( connections.size() != getAllPeersAboveMe().size()) {
+        if ( connections.size() != getAllOtherPeers().size()) {
             // Don't abort exiting, but do check this.
             System.out.println("Error in connection size!!! Reported is " + connections.size() + " But expected is " + getAllOtherPeers().size());
         }

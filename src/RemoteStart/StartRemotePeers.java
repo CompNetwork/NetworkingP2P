@@ -77,10 +77,12 @@ public class StartRemotePeers {
 
                 // *********************** IMPORTANT *************************** //
                 // If your program is JAVA, use this line.
-                Runtime.getRuntime().exec("rm -f " +pInfo.peerId + "stdoutanderr.txt");
                 String exec = "ssh " + pInfo.peerAddress + " cd " + path + "; java -jar IndividualPeer.jar " + pInfo.peerId +" >& " + pInfo.peerId + "stdoutanderr.txt";
                 if ( args[0].equals("kill") ) {
                     exec = "ssh " + pInfo.peerAddress + " cd " + path + "; pkill -f \"java -jar\"";
+                } else {
+                    // Remove the old stderr/out files.
+                    Runtime.getRuntime().exec("rm -f " +pInfo.peerId + "stdoutanderr.txt");
                 }
                 System.out.println("Executing the following line " + exec);
                 processes.add(Runtime.getRuntime().exec(exec));
